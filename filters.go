@@ -7,6 +7,7 @@ import (
 	"github.com/datewu/validator"
 )
 
+// FilterParams returns a new FilterParams object with the given page and page_size
 type Filters struct {
 	Page         int
 	PageSize     int
@@ -14,7 +15,7 @@ type Filters struct {
 	SortSafelist []string
 }
 
-func (f Filters) sortColumn() string {
+func (f Filters) SortColumn() string {
 	for _, safeValue := range f.SortSafelist {
 		if f.Sort == safeValue {
 			return strings.TrimPrefix(f.Sort, "-")
@@ -23,18 +24,18 @@ func (f Filters) sortColumn() string {
 	panic("unsafe sort parameter: " + f.Sort)
 }
 
-func (f Filters) sortDirection() string {
+func (f Filters) SortDirection() string {
 	if strings.HasPrefix(f.Sort, "-") {
 		return "DESC"
 	}
 	return "ASC"
 }
 
-func (f Filters) limit() int {
+func (f Filters) Limit() int {
 	return f.PageSize
 }
 
-func (f Filters) offset() int {
+func (f Filters) Offset() int {
 	return (f.Page - 1) * f.PageSize
 }
 
@@ -49,6 +50,7 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(validator.In(f.Sort, f.SortSafelist...), "sort", "invalid sort value")
 }
 
+// Metadata contains information about the current page and page size
 type Metadata struct {
 	CurrentPage  int `json:"current_page,omitempty"`
 	PageSize     int `json:"page_size,omitempty"`
@@ -57,7 +59,8 @@ type Metadata struct {
 	TotalRecords int `json:"total_records,omitempty"`
 }
 
-func calculateMetadata(total, page, pageSize int) Metadata {
+// NewMetadata returns a new Metadata object with the given page and page_size
+func NewMetadata(total, page, pageSize int) Metadata {
 	if total == 0 {
 		return Metadata{}
 	}

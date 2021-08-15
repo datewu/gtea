@@ -12,10 +12,11 @@ import (
 	"time"
 )
 
-func (app *application) serve() error {
+// Serve start http server
+func (app *application) Serve(routes http.Handler) error {
 	srv := &http.Server{
-		Addr:     fmt.Sprintf(":%d", app.config.port),
-		Handler:  app.routes(),
+		Addr:     fmt.Sprintf(":%d", app.config.Port),
+		Handler:  routes,
 		ErrorLog: log.New(app.logger, "", 0),
 	}
 	srv.IdleTimeout = time.Minute
@@ -43,7 +44,7 @@ func (app *application) serve() error {
 	}
 	go bgSignal()
 	app.logger.PrintInfo("starting server", map[string]string{
-		"env":  app.config.env,
+		"env":  app.config.Env,
 		"addr": srv.Addr,
 	})
 

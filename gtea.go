@@ -10,32 +10,25 @@ import (
 	"github.com/datewu/jsonlog"
 )
 
-type config struct {
-	port    int
-	env     string
-	limiter struct {
-		rps     float64
-		burst   int
-		enabled bool
-	}
-	cors struct {
-		trustedOrigins []string
-	}
-	metrics bool
+// Config is the configuration for the application
+type Config struct {
+	Port    int
+	Env     string
+	Metrics bool
 }
 
 type application struct {
-	config config
+	config *Config
 	logger *jsonlog.Logger
 	wg     sync.WaitGroup
 }
 
-func newTodo(cfg config) {
+func NewApp(cfg *Config) *application {
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 
 	logger.PrintInfo("database connection pool established", nil)
 
-	if cfg.metrics {
+	if cfg.Metrics {
 		expvar.Publish("goroutines", expvar.Func(func() interface{} {
 			return runtime.NumGoroutine()
 		}))
@@ -47,9 +40,5 @@ func newTodo(cfg config) {
 		config: cfg,
 		logger: logger,
 	}
-
-	err := app.serve()
-	if err != nil {
-		app.logger.PrintFatal(err, nil)
-	}
+	return app
 }
