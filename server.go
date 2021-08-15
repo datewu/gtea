@@ -14,6 +14,7 @@ import (
 
 // Serve start http server
 func (app *application) Serve(routes http.Handler) error {
+	defer app.shutdown()
 	srv := &http.Server{
 		Addr:     fmt.Sprintf(":%d", app.config.Port),
 		Handler:  routes,
