@@ -12,8 +12,8 @@ import (
 )
 
 type application struct {
+	Logger *jsonlog.Logger
 	config *Config
-	logger *jsonlog.Logger
 	wg     sync.WaitGroup
 	db     *sql.DB
 }
@@ -30,7 +30,7 @@ func NewApp(cfg *Config) *application {
 	}
 	app := &application{
 		config: cfg,
-		logger: logger,
+		Logger: logger,
 	}
 	return app
 }
@@ -43,7 +43,7 @@ func (app *application) shutdown() {
 	if app.db != nil {
 		err := app.db.Close()
 		if err != nil {
-			app.logger.PrintErr(err, nil)
+			app.Logger.PrintErr(err, nil)
 		}
 	}
 }

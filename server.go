@@ -18,7 +18,7 @@ func (app *application) Serve(routes http.Handler) error {
 	srv := &http.Server{
 		Addr:     fmt.Sprintf(":%d", app.config.Port),
 		Handler:  routes,
-		ErrorLog: log.New(app.logger, "", 0),
+		ErrorLog: log.New(app.Logger, "", 0),
 	}
 	srv.IdleTimeout = time.Minute
 	srv.ReadTimeout = 10 * time.Second
@@ -29,7 +29,7 @@ func (app *application) Serve(routes http.Handler) error {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		s := <-quit
-		app.logger.PrintInfo("caught signal", map[string]string{
+		app.Logger.PrintInfo("caught signal", map[string]string{
 			"signal": s.String(),
 		})
 
@@ -39,12 +39,12 @@ func (app *application) Serve(routes http.Handler) error {
 		if err != nil {
 			shutdownErr <- err
 		}
-		app.logger.PrintInfo("completing background tasks", nil)
+		app.Logger.PrintInfo("completing background tasks", nil)
 		app.wg.Wait()
 		shutdownErr <- nil
 	}
 	go bgSignal()
-	app.logger.PrintInfo("starting server", map[string]string{
+	app.Logger.PrintInfo("starting server", map[string]string{
 		"env":  app.config.Env,
 		"addr": srv.Addr,
 	})
@@ -57,7 +57,7 @@ func (app *application) Serve(routes http.Handler) error {
 	if err != nil {
 		return err
 	}
-	app.logger.PrintInfo("stopped server", map[string]string{
+	app.Logger.PrintInfo("stopped server", map[string]string{
 		"addr": srv.Addr,
 	})
 	return nil

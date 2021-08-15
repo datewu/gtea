@@ -8,7 +8,7 @@ import (
 func (app *application) Background(fn func()) {
 	rcv := func() {
 		if r := recover(); r != nil {
-			app.logger.PrintErr(fmt.Errorf("%s", r), nil)
+			app.Logger.PrintErr(fmt.Errorf("%s", r), nil)
 		}
 	}
 	app.wg.Add(1)
