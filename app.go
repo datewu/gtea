@@ -1,7 +1,6 @@
 package gtea
 
 import (
-	"database/sql"
 	"expvar"
 	"os"
 	"runtime"
@@ -11,14 +10,15 @@ import (
 	"github.com/datewu/jsonlog"
 )
 
-type application struct {
-	Logger *jsonlog.Logger
-	config *Config
-	wg     sync.WaitGroup
-	db     *sql.DB
+// App is the main application object.
+type App struct {
+	Logger  *jsonlog.Logger
+	config  *Config
+	wg      sync.WaitGroup
+	exitFns []func()
 }
 
-func NewApp(cfg *Config) *application {
+func NewApp(cfg *Config) *App {
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 	if cfg.Metrics {
 		expvar.Publish("goroutines", expvar.Func(func() interface{} {
@@ -28,22 +28,9 @@ func NewApp(cfg *Config) *application {
 			return time.Now().Unix()
 		}))
 	}
-	app := &application{
+	app := &App{
 		config: cfg,
 		Logger: logger,
 	}
 	return app
-}
-
-func (app *application) SetDB(db *sql.DB) {
-	app.db = db
-}
-
-func (app *application) shutdown() {
-	if app.db != nil {
-		err := app.db.Close()
-		if err != nil {
-			app.Logger.PrintErr(err, nil)
-		}
-	}
 }

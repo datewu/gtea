@@ -13,8 +13,7 @@ import (
 )
 
 // Serve start http server
-func (app *application) Serve(routes http.Handler) error {
-	defer app.shutdown()
+func (app *App) Serve(routes http.Handler) error {
 	srv := &http.Server{
 		Addr:     fmt.Sprintf(":%d", app.config.Port),
 		Handler:  routes,
