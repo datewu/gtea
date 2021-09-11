@@ -18,6 +18,7 @@ type App struct {
 	exitFns []func()
 }
 
+// NewApp creates a new application object.
 func NewApp(cfg *Config) *App {
 	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
 	if cfg.Metrics {
@@ -33,4 +34,10 @@ func NewApp(cfg *Config) *App {
 		Logger: logger,
 	}
 	return app
+}
+
+// DefaultApp is the default application object.
+func DefaultApp() *App {
+	cfg := DefaultConfig()
+	return NewApp(cfg)
 }

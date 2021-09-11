@@ -6,3 +6,12 @@ type Config struct {
 	Env     string
 	Metrics bool
 }
+
+// DefaultConfig is the default configuration for the application
+func DefaultConfig() *Config {
+	return &Config{
+		Port:    8080,
+		Env:     "development",
+		Metrics: false,
+	}
+}
