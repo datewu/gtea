@@ -13,7 +13,7 @@ import (
 )
 
 // Serve start http server
-func (app *App) Serve(routes http.Handler) error {
+func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	srv := &http.Server{
 		Addr:     fmt.Sprintf(":%d", app.config.Port),
 		Handler:  routes,
@@ -32,7 +32,7 @@ func (app *App) Serve(routes http.Handler) error {
 			"signal": s.String(),
 		})
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		err := srv.Shutdown(ctx)
 		if err != nil {
