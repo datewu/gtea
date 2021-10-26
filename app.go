@@ -12,10 +12,25 @@ import (
 
 // App is the main application object.
 type App struct {
-	Logger  *jsonlog.Logger
-	config  *Config
-	wg      sync.WaitGroup
-	exitFns []func()
+	Logger   *jsonlog.Logger
+	metaData map[string]string
+	config   *Config
+	wg       sync.WaitGroup
+	exitFns  []func()
+}
+
+// AddMetaData adds meta data to the application by key.
+// skipped if the key already exists.
+func (a *App) AddMetaData(key, value string) {
+	if _, ok := a.metaData[key]; ok {
+		return
+	}
+	a.metaData[key] = value
+}
+
+// GetMetaData returns the meta data of the application by key.
+func (a *App) GetMetaData(key string) string {
+	return a.metaData[key]
 }
 
 // NewApp creates a new application object.
@@ -30,8 +45,9 @@ func NewApp(cfg *Config) *App {
 		}))
 	}
 	app := &App{
-		config: cfg,
-		Logger: logger,
+		metaData: make(map[string]string),
+		config:   cfg,
+		Logger:   logger,
 	}
 	return app
 }
