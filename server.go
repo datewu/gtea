@@ -28,7 +28,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		s := <-quit
-		app.Logger.PrintInfo("caught signal", map[string]string{
+		app.Logger.Info("caught signal", map[string]string{
 			"signal": s.String(),
 		})
 
@@ -38,12 +38,12 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 		if err != nil {
 			shutdownErr <- err
 		}
-		app.Logger.PrintInfo("completing background tasks", nil)
+		app.Logger.Info("completing background tasks", nil)
 		app.wg.Wait()
 		shutdownErr <- nil
 	}
 	go bgSignal()
-	app.Logger.PrintInfo("starting server", map[string]string{
+	app.Logger.Info("starting server", map[string]string{
 		"env":  app.config.Env,
 		"addr": srv.Addr,
 	})
@@ -56,7 +56,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	if err != nil {
 		return err
 	}
-	app.Logger.PrintInfo("stopped server", map[string]string{
+	app.Logger.Info("stopped server", map[string]string{
 		"addr": srv.Addr,
 	})
 	return nil

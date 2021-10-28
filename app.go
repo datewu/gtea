@@ -35,7 +35,7 @@ func (a *App) GetMetaData(key string) string {
 
 // NewApp creates a new application object.
 func NewApp(cfg *Config) *App {
-	logger := jsonlog.New(os.Stdout, jsonlog.LevelInfo)
+	logger := jsonlog.New(os.Stdout, cfg.LogLevel)
 	if cfg.Metrics {
 		expvar.Publish("goroutines", expvar.Func(func() interface{} {
 			return runtime.NumGoroutine()
