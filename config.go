@@ -1,6 +1,6 @@
 package gtea
 
-import "github.com/datewu/jsonlog"
+import "github.com/datewu/gtea/jsonlog"
 
 // Config is the configuration for the application
 type Config struct {

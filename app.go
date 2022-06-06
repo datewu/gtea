@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/datewu/jsonlog"
+	"github.com/datewu/gtea/jsonlog"
 )
 
 // App is the main application object.
