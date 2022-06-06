@@ -49,10 +49,9 @@ func TestHealhCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	routes := g.Routes()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/v1/healthcheck", nil)
-	routes.ServeHTTP(w, req)
+	g.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
 	}
@@ -72,11 +71,10 @@ func TestGroup(t *testing.T) {
 	b := g.Group("/b")
 	a.Get("/ok", HealthCheck)
 	b.Get("/ok", HealthCheck)
-	routes := g.Routes()
 	okPath := func(path string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", path, nil)
-		routes.ServeHTTP(w, req)
+		g.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
 			t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
 		}
@@ -91,7 +89,7 @@ func TestGroup(t *testing.T) {
 	notOKPath := func(path string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", path, nil)
-		routes.ServeHTTP(w, req)
+		g.ServeHTTP(w, req)
 		if w.Code != http.StatusNotFound {
 			t.Fatalf("expected %d got %d", http.StatusNotFound, w.Code)
 		}

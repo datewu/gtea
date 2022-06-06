@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strings"
+	"sync"
 )
 
 // RouterGroup is a group of routes
@@ -10,6 +11,35 @@ type RouterGroup struct {
 	r           *router
 	prefix      string
 	middlewares []Middleware
+	once        sync.Once
+	serverHTTP  http.HandlerFunc
+}
+
+func (g *RouterGroup) bound() {
+	g.r.router.NotFound = errResponse(http.StatusNotFound,
+		"the requested resource could not be found",
+	)
+	g.r.router.MethodNotAllowed = MethodNotAllowed
+	g.Get("/v1/healthcheck", HealthCheck)
+	h := http.Handler(g.r.router)
+	mm := h.ServeHTTP
+	middlewares := append(g.middlewares, g.r.buildIns()...)
+	for _, m := range middlewares {
+		mm = m(mm)
+	}
+	g.serverHTTP = mm
+}
+
+func (g *RouterGroup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	g.once.Do(g.bound)
+	g.serverHTTP(w, r)
+}
+
+// Use add middleware to the group
+// middleware will be called in the order of use
+// Or call NewHandler to add a new middleware
+func (g *RouterGroup) Use(mds ...Middleware) {
+	g.middlewares = append(g.middlewares, mds...)
 }
 
 // Group add a prefix to all path, for each Gropu call
