@@ -24,6 +24,8 @@ func hanlder(w http.ResponseWriter, r *http.Request, h Hook) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 	w.WriteHeader(http.StatusOK)
 
 	f, ok := w.(http.Flusher)
