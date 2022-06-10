@@ -35,3 +35,7 @@ var MethodNotAllowed http.HandlerFunc = func(w http.ResponseWriter, r *http.Requ
 	msg := fmt.Sprintf("the %s mehtod is not supported for this resource", r.Method)
 	errResponse(http.StatusMethodNotAllowed, msg)
 }
+
+func NotFoundMsg(msg string) http.HandlerFunc {
+	return errResponse(http.StatusNotFound, msg)
+}

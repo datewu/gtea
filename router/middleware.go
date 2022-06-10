@@ -1,4 +1,4 @@
-package handler
+package router
 
 import (
 	"expvar"
@@ -7,13 +7,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/datewu/gtea/handler"
 	"golang.org/x/time/rate"
 )
 
 // Middleware is a function that takes a http.HandlerFunc and returns a http.HandlerFunc.
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
-func (ro *router) enabledCORS(next http.HandlerFunc) http.HandlerFunc {
+func (ro *bag) enabledCORS(next http.HandlerFunc) http.HandlerFunc {
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Origin")
 
@@ -48,7 +49,7 @@ func (ro *router) enabledCORS(next http.HandlerFunc) http.HandlerFunc {
 	}
 	return middle
 }
-func (ro *router) rateLimit(next http.HandlerFunc) http.HandlerFunc {
+func (ro *bag) rateLimit(next http.HandlerFunc) http.HandlerFunc {
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -72,7 +73,7 @@ func (ro *router) rateLimit(next http.HandlerFunc) http.HandlerFunc {
 	go delOld(time.Minute)
 
 	middle := func(w http.ResponseWriter, r *http.Request) {
-		h := NewHandleHelper(w, r)
+		h := handler.NewHandleHelper(w, r)
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			h.ServerErr(err)
@@ -97,7 +98,7 @@ func (ro *router) rateLimit(next http.HandlerFunc) http.HandlerFunc {
 	return middle
 }
 
-func (ro *router) metrics(next http.HandlerFunc) http.HandlerFunc {
+func (ro *bag) metrics(next http.HandlerFunc) http.HandlerFunc {
 	totalRequestReceived := expvar.NewInt("total_requests_received")
 	totalResponsesSend := expvar.NewInt("total_responses_send")
 	totalProcessingTimeMicroseconds := expvar.NewInt("total_processing_time_us")
@@ -117,7 +118,7 @@ func recoverPanic(next http.HandlerFunc) http.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
-				WriteJSON(w, http.StatusInternalServerError, Envelope{"recover": err}, nil)
+				handler.WriteJSON(w, http.StatusInternalServerError, handler.Envelope{"recover": err}, nil)
 				return
 			}
 		}()

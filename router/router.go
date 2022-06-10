@@ -1,4 +1,4 @@
-package handler
+package router
 
 import (
 	"expvar"
@@ -30,13 +30,13 @@ func DefaultConf() *Config {
 	return cnf
 }
 
-// router holds all paths relative funcs
-type router struct {
-	router *httprouter.Router
+// bag holds all paths relative funcs
+type bag struct {
+	rt     *httprouter.Router
 	config *Config
 }
 
-func (r *router) buildIns() []Middleware {
+func (r *bag) buildIns() []Middleware {
 	ms := []Middleware{}
 	// note the order is siginificant
 	if r.config.Limiter.Enabled {
@@ -47,7 +47,7 @@ func (r *router) buildIns() []Middleware {
 	}
 	ms = append(ms, recoverPanic)
 	if r.config.Metrics {
-		r.router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
+		r.rt.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 		ms = append(ms, r.metrics)
 	}
 	return ms
