@@ -6,21 +6,21 @@ import (
 )
 
 // NewHandler returns a HandlerFunc that writes/loop the event to the ResponseWriter.
-func NewHandler(h Hook) http.HandlerFunc {
+func NewHandler(h Downstream) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hanlder(w, r, h)
 	}
 }
 
-// Hook is a SSE hook.
-type Hook func(http.ResponseWriter, http.Flusher)
+// Downstream take over the responsibility to write the event to the ResponseWriter.
+type Downstream func(http.ResponseWriter, http.Flusher)
 
 // Demo for SSE
 func Demo(w http.ResponseWriter, r *http.Request) {
 	hanlder(w, r, demoLoop)
 }
 
-func hanlder(w http.ResponseWriter, r *http.Request, h Hook) {
+func hanlder(w http.ResponseWriter, r *http.Request, h Downstream) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")

@@ -14,26 +14,26 @@ type Event struct {
 }
 
 // Bytes marshal the event as a byte slice.
-// special encode '\n' to '\r\n'
+// escape '\n' to '\r\n'
 func (s Event) Bytes() []byte {
 	if s.data == nil {
 		return nil
 	}
 	buf := new(bytes.Buffer)
 	if s.id != nil {
-		buf.WriteString(`id: `)
+		buf.WriteString("id: ")
 		buf.WriteString(*s.id + "\n")
 	}
 	if s.name != nil {
-		buf.WriteString(`event: `)
+		buf.WriteString("event: ")
 		buf.WriteString(*s.name + "\n")
 	}
 	if s.retry != nil {
-		buf.WriteString(`retry: `)
+		buf.WriteString("retry: ")
 		buf.WriteString(*s.retry + "\n")
 	}
 	if s.data != nil {
-		buf.WriteString(`data: `)
+		buf.WriteString("data: ")
 		bs, err := json.Marshal(s.data)
 		if err != nil {
 			return nil
@@ -58,7 +58,7 @@ func NewEvent(name string, data any) Event {
 	}
 }
 
-// Message is a single message in an SSE stream.
+// Message is a single/default message in an SSE stream.
 func NewMessage(data any) Event {
 	return Event{
 		data: data,
