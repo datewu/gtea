@@ -10,7 +10,7 @@ import (
 
 func TestHealhCheck(t *testing.T) {
 	rconf := &Config{}
-	g, err := NewRouterGroup(rconf)
+	g, err := NewRoutesGroup(rconf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +28,7 @@ func TestHealhCheck(t *testing.T) {
 
 func TestGroup(t *testing.T) {
 	rconf := &Config{}
-	g, err := NewRouterGroup(rconf)
+	g, err := NewRoutesGroup(rconf)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,8 +6,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// NewRouterGroup return a new routergroup
-func NewRouterGroup(conf *Config) (*RoutesGroup, error) {
+// NewRoutesGroup return a new routesgroup
+func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
 	if conf == nil {
 		return nil, errors.New("no router config provided")
 	}
@@ -18,8 +18,8 @@ func NewRouterGroup(conf *Config) (*RoutesGroup, error) {
 	return &RoutesGroup{r: &r}, nil
 }
 
-// DefaultRouterGroup return a new routergroup with default router config
-func DefaultRouterGroup() *RoutesGroup {
+// DefaultRoutesGroup return a new routesgroup with default router config
+func DefaultRoutesGroup() *RoutesGroup {
 	r := bag{
 		rt:     httprouter.New(),
 		config: DefaultConf(),
