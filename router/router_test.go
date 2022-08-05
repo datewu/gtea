@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -65,4 +66,32 @@ func TestGroup(t *testing.T) {
 	}
 	notOKPath("/a/notok")
 	notOKPath("/c/ok")
+}
+
+func TestPathParams(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nameHandle := func(w http.ResponseWriter, r *http.Request) {
+		data := map[string]string{
+			"name": ReadParams(r, "name"),
+		}
+		handler.WriteJSON(w, http.StatusOK, data, nil)
+	}
+	g.Get("/hi/:name", nameHandle)
+	namePath := func(name string) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/hi/"+name, nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := fmt.Sprintf(`{"name":"%s"}`, name)
+		if w.Body.String() != expect {
+			t.Fatalf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	namePath("joe-boy")
 }
