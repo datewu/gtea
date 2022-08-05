@@ -18,12 +18,16 @@ type Logger struct {
 	mu       sync.Mutex
 }
 
+var defaultLogger = Default()
+
 // New create a new Logger
 func New(out io.Writer, minLevel Level) *Logger {
-	return &Logger{
+	l := &Logger{
 		out:      out,
 		minLevel: minLevel,
 	}
+	defaultLogger = l
+	return l
 }
 
 // Default write to stdout with the minimum level set to LevelDebug.
