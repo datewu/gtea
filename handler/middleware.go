@@ -13,8 +13,8 @@ import (
 // Middleware is a function that takes a http.HandlerFunc and returns a http.HandlerFunc.
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
-// RecoverPanic middleware
-func RecoverPanic(next http.HandlerFunc) http.HandlerFunc {
+// RecoverPanicMiddleware middleware
+func RecoverPanicMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -28,8 +28,8 @@ func RecoverPanic(next http.HandlerFunc) http.HandlerFunc {
 	return middle
 }
 
-// Metrics middleware enable expvar profile
-func Metrics(next http.HandlerFunc) http.HandlerFunc {
+// MetricsMiddleware middleware enable expvar profile
+func MetricsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	totalRequestReceived := expvar.NewInt("total_requests_received")
 	totalResponsesSend := expvar.NewInt("total_responses_send")
 	totalProcessingTimeMicroseconds := expvar.NewInt("total_processing_time_us")
@@ -44,8 +44,8 @@ func Metrics(next http.HandlerFunc) http.HandlerFunc {
 	return middle
 }
 
-// RateLimit return a middle
-func RateLimit(rps float64, brust int) Middleware {
+// RateLimitMiddleware return a middle
+func RateLimitMiddleware(rps float64, brust int) Middleware {
 	mid := func(next http.HandlerFunc) http.HandlerFunc {
 		type client struct {
 			limiter  *rate.Limiter
@@ -96,7 +96,7 @@ func RateLimit(rps float64, brust int) Middleware {
 	return mid
 }
 
-func CORS(trustedOrigins []string) Middleware {
+func CORSMiddleware(trustedOrigins []string) Middleware {
 	mid := func(next http.HandlerFunc) http.HandlerFunc {
 		cors := func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Vary", "Origin")
@@ -131,6 +131,35 @@ func CORS(trustedOrigins []string) Middleware {
 			next(w, r)
 		}
 		return cors
+	}
+	return mid
+}
+
+func TokenMiddleware(check func(string) (bool, error)) Middleware {
+	mid := func(next http.HandlerFunc) http.HandlerFunc {
+		checkToken := func(w http.ResponseWriter, r *http.Request) {
+			h := NewHandleHelper(w, r)
+			token, err := GetToken(r, "token")
+			if err != nil {
+				if err == ErrNoToken {
+					h.AuthenticationRequire()
+					return
+				}
+				h.InvalidCredentials()
+				return
+			}
+			ok, err := check(token)
+			if err != nil {
+				h.ServerErr(err)
+				return
+			}
+			if !ok {
+				h.NotPermitted()
+				return
+			}
+			next(w, r)
+		}
+		return checkToken
 	}
 	return mid
 }

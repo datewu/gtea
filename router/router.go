@@ -46,10 +46,10 @@ func (r *bag) buildIns() []handler.Middleware {
 	if r.config.CORS.TrustedOrigins != nil {
 		ms = append(ms, r.corsMiddleware())
 	}
-	ms = append(ms, handler.RecoverPanic)
+	ms = append(ms, handler.RecoverPanicMiddleware)
 	if r.config.Metrics {
 		r.rt.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
-		ms = append(ms, handler.Metrics)
+		ms = append(ms, handler.MetricsMiddleware)
 	}
 	return ms
 }
