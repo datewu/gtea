@@ -4,6 +4,7 @@ import (
 	"expvar"
 	"net/http"
 
+	"github.com/datewu/gtea/handler"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -36,19 +37,19 @@ type bag struct {
 	config *Config
 }
 
-func (r *bag) buildIns() []Middleware {
-	ms := []Middleware{}
+func (r *bag) buildIns() []handler.Middleware {
+	ms := []handler.Middleware{}
 	// note the order is siginificant
 	if r.config.Limiter.Enabled {
-		ms = append(ms, r.rateLimit)
+		ms = append(ms, r.rateLimitMiddleware())
 	}
 	if r.config.CORS.TrustedOrigins != nil {
-		ms = append(ms, r.enabledCORS)
+		ms = append(ms, r.corsMiddleware())
 	}
-	ms = append(ms, recoverPanic)
+	ms = append(ms, handler.RecoverPanic)
 	if r.config.Metrics {
 		r.rt.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
-		ms = append(ms, r.metrics)
+		ms = append(ms, handler.Metrics)
 	}
 	return ms
 }

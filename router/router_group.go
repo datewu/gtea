@@ -12,7 +12,7 @@ import (
 type RoutesGroup struct {
 	r           *bag
 	prefix      string
-	middlewares []Middleware
+	middlewares []handler.Middleware
 	once        sync.Once
 	serverHTTP  http.HandlerFunc
 }
@@ -39,13 +39,13 @@ func (g *RoutesGroup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Use add middleware to the group
 // middleware will be called in the order of use
 // Or call NewHandler to add a new middleware
-func (g *RoutesGroup) Use(mds ...Middleware) {
+func (g *RoutesGroup) Use(mds ...handler.Middleware) {
 	g.middlewares = append(g.middlewares, mds...)
 }
 
 // Group add a prefix to all path, for each Gropu call
 // prefix will accumulate while middleware don't
-func (g *RoutesGroup) Group(path string, mds ...Middleware) *RoutesGroup {
+func (g *RoutesGroup) Group(path string, mds ...handler.Middleware) *RoutesGroup {
 	gp := &RoutesGroup{
 		r:      g.r,
 		prefix: g.prefix + path,
