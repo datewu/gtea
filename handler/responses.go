@@ -16,7 +16,7 @@ func OKText(w http.ResponseWriter, text string) {
 }
 
 func errResponse(code int, msg interface{}) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		data := Envelope{"error": msg}
 		WriteJSON(w, code, data, nil)
 	}

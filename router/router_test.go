@@ -16,7 +16,7 @@ func TestHealhCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/v1/healthcheck", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
 	g.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
@@ -25,6 +25,34 @@ func TestHealhCheck(t *testing.T) {
 	if w.Body.String() != expect {
 		t.Fatalf("expected %q got %q", expect, w.Body.String())
 	}
+}
+
+func TestRequestMethods(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.Get("/ok", handler.HealthCheck)
+	g.Post("/ok", handler.HealthCheck)
+	g.Put("/ok", handler.HealthCheck)
+	g.Delete("/ok", handler.HealthCheck)
+	request := func(method string) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(method, "/ok", nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := `{"status":"available"}`
+		if w.Body.String() != expect {
+			t.Fatalf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	request(http.MethodGet)
+	request(http.MethodPost)
+	request(http.MethodPut)
+	request(http.MethodDelete)
 }
 
 func TestGroup(t *testing.T) {
@@ -76,7 +104,7 @@ func TestPathParams(t *testing.T) {
 	}
 	nameHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
-			"name": ReadParams(r, "name"),
+			"name": ReadPath(r, "name"),
 		}
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}

@@ -1,55 +1,60 @@
 package router
 
 import (
-	"expvar"
 	"net/http"
-
-	"github.com/datewu/gtea/handler"
-	"github.com/julienschmidt/httprouter"
 )
-
-// Config is the configuration for the router
-type Config struct {
-	Limiter struct {
-		Rps     float64
-		Burst   int
-		Enabled bool
-	}
-	CORS struct {
-		TrustedOrigins []string
-	}
-	Metrics bool
-}
-
-// DefaultConf return the default config
-func DefaultConf() *Config {
-	cnf := &Config{Metrics: true}
-	cnf.Limiter.Enabled = true
-	cnf.Limiter.Rps = 200
-	cnf.Limiter.Burst = 10
-	cnf.CORS.TrustedOrigins = nil
-	return cnf
-}
 
 // bag holds all paths relative funcs
 type bag struct {
-	rt     *httprouter.Router
+	rt     *Router
 	config *Config
 }
 
-func (r *bag) buildIns() []handler.Middleware {
-	ms := []handler.Middleware{}
-	// note the order is siginificant
-	if r.config.Limiter.Enabled {
-		ms = append(ms, r.rateLimitMiddleware())
+// Router ..
+type Router struct {
+	mux                        *http.ServeMux
+	NotFound, MethodNotAllowed http.HandlerFunc
+}
+
+func (ro *Router) interceptHandler() http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		i := &interceptor4xx{
+			origWriter:       w,
+			methodNotAllowed: ro.MethodNotAllowed,
+			notFound:         ro.NotFound,
+		}
+		r.URL.Path += r.Method
+		ro.mux.ServeHTTP(i, r)
 	}
-	if r.config.CORS.TrustedOrigins != nil {
-		ms = append(ms, r.corsMiddleware())
+	return fn
+}
+
+func NewRouter() *Router {
+	r := &Router{}
+	r.mux = http.NewServeMux()
+	r.NotFound = func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
 	}
-	ms = append(ms, handler.RecoverPanicMiddleware)
-	if r.config.Metrics {
-		r.rt.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
-		ms = append(ms, handler.MetricsMiddleware)
+	r.MethodNotAllowed = func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-	return ms
+	return r
+}
+
+func (r *Router) Handle(method, path string, h http.Handler) {
+	if !containerPathParam(path) {
+		r.mux.Handle(path+method, h)
+		return
+	}
+}
+
+func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {
+	if hf == nil {
+		panic("http: nil handler")
+	}
+	r.Handle(method, path, hf)
+}
+
+func (ro *Router) ServeFiles(path string, root http.Dir) {
+
 }

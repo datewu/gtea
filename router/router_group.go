@@ -22,8 +22,7 @@ func (g *RoutesGroup) bound() {
 		"the requested resource could not be found")
 	g.r.rt.MethodNotAllowed = handler.MethodNotAllowed
 	g.Get("/v1/healthcheck", handler.HealthCheck)
-	h := http.Handler(g.r.rt)
-	mm := h.ServeHTTP
+	mm := g.r.rt.interceptHandler()
 	middlewares := append(g.middlewares, g.r.buildIns()...)
 	for _, m := range middlewares {
 		mm = m(mm)
@@ -56,37 +55,37 @@ func (g *RoutesGroup) Group(path string, mds ...handler.Middleware) *RoutesGroup
 	return gp
 }
 
-// NewHandler handle new http request
-func (g *RoutesGroup) NewHandler(method, path string, handler http.HandlerFunc) {
+// HandleFunc handle new http request
+func (g *RoutesGroup) HandleFunc(method, path string, handler http.HandlerFunc) {
 	for _, v := range g.middlewares {
 		handler = v(handler)
 	}
-	g.r.rt.HandlerFunc(method, g.prefix+path, handler)
+	g.r.rt.HandleFunc(method, g.prefix+path, handler)
 }
 
 // Get is a shortcut for NewHandler(http.MethodGet, path, handler)
 func (g *RoutesGroup) Get(path string, handler http.HandlerFunc) {
-	g.NewHandler(http.MethodGet, path, handler)
+	g.HandleFunc(http.MethodGet, path, handler)
 }
 
 // Post is a shortcut for NewHandler(http.MethodPost, path, handler)
 func (g *RoutesGroup) Post(path string, handler http.HandlerFunc) {
-	g.NewHandler(http.MethodPost, path, handler)
+	g.HandleFunc(http.MethodPost, path, handler)
 }
 
 // Put is a shortcut for NewHandler(http.MethodPut, path, handler)
 func (g *RoutesGroup) Put(path string, handler http.HandlerFunc) {
-	g.NewHandler(http.MethodPut, path, handler)
+	g.HandleFunc(http.MethodPut, path, handler)
 }
 
 // Patch is a shortcut for NewHandler(http.MethodPatch, path, handler)
 func (g *RoutesGroup) Patch(path string, handler http.HandlerFunc) {
-	g.NewHandler(http.MethodPatch, path, handler)
+	g.HandleFunc(http.MethodPatch, path, handler)
 }
 
 // Delete is a shortcut for NewHandler(http.MethodDelete, path, handler)
 func (g *RoutesGroup) Delete(path string, handler http.HandlerFunc) {
-	g.NewHandler(http.MethodDelete, path, handler)
+	g.HandleFunc(http.MethodDelete, path, handler)
 }
 
 // Static is a shortcut for NewHandler(http.MethodDelete, path, handler)

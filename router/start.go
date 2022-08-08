@@ -2,8 +2,6 @@ package router
 
 import (
 	"errors"
-
-	"github.com/julienschmidt/httprouter"
 )
 
 // NewRoutesGroup return a new routesgroup
@@ -12,7 +10,7 @@ func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
 		return nil, errors.New("no router config provided")
 	}
 	r := bag{
-		rt:     httprouter.New(),
+		rt:     NewRouter(),
 		config: conf,
 	}
 	return &RoutesGroup{r: &r}, nil
@@ -21,7 +19,7 @@ func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
 // DefaultRoutesGroup return a new routesgroup with default router config
 func DefaultRoutesGroup() *RoutesGroup {
 	r := bag{
-		rt:     httprouter.New(),
+		rt:     NewRouter(),
 		config: DefaultConf(),
 	}
 	return &RoutesGroup{r: &r}
