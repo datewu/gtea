@@ -26,7 +26,6 @@ var pathReg = regexp.MustCompile(`/:(\w+)`)
 
 func containerPathParam(path string) bool {
 	return pathReg.MatchString(path)
-	//return pathReg.FindAllStringSubmatchIndex(path)
 }
 
 func findPathParam(path string) []string {
