@@ -12,48 +12,30 @@ type bag struct {
 
 // Router ..
 type Router struct {
-	mux                        *http.ServeMux
 	trie                       *pathTrie
 	NotFound, MethodNotAllowed http.HandlerFunc
 }
 
-func (ro *Router) interceptHandler() http.HandlerFunc {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		i := &interceptor4xx{
-			origWriter:       w,
-			methodNotAllowed: ro.MethodNotAllowed,
-			notFound:         ro.NotFound,
-		}
-		if tHandler :=
-			ro.trie.get(r.Method + "/" + r.URL.Path); tHandler != nil {
-			tHandler.ServeHTTP(w, r)
-			return
-		}
-		r.URL.Path += r.Method
-		ro.mux.ServeHTTP(i, r)
+func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	tHandler := ro.trie.get(r.Method + r.URL.Path)
+	if tHandler != nil {
+		tHandler.ServeHTTP(w, r)
+		return
 	}
-	return fn
+	ro.NotFound(w, r)
 }
 
 func NewRouter() *Router {
 	r := &Router{}
-	r.mux = http.NewServeMux()
 	r.trie = newPathTrie()
 	r.NotFound = func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
-	}
-	r.MethodNotAllowed = func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 	return r
 }
 
 func (r *Router) Handle(method, path string, h http.Handler) {
-	if !containerPathParam(path) {
-		r.mux.Handle(path+method, h)
-		return
-	}
-	r.trie.put(method+"/"+path, h)
+	r.trie.put(method+path, h)
 }
 
 func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {

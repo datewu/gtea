@@ -105,7 +105,9 @@ func TestPathParams(t *testing.T) {
 	nameHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
 			"name": ReadPath(r, "name"),
+			"lol":  "name",
 		}
+		fmt.Println("lol show the handler")
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}
 	g.Get("/hi/:name", nameHandle)

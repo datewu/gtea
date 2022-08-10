@@ -22,7 +22,7 @@ func (g *RoutesGroup) bound() {
 		"the requested resource could not be found")
 	g.r.rt.MethodNotAllowed = handler.MethodNotAllowed
 	g.Get("/v1/healthcheck", handler.HealthCheck)
-	mm := g.r.rt.interceptHandler()
+	mm := g.r.rt.ServeHTTP
 	middlewares := append(g.middlewares, g.r.buildIns()...)
 	for _, m := range middlewares {
 		mm = m(mm)

@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -13,7 +14,7 @@ const paramsCtxKey pathRegs = "path_param_names"
 const (
 	pathSeperator   = "/"
 	paramNote       = ":"
-	specialChildKey = "  "
+	specialChildKey = " " + pathSeperator + " "
 )
 
 func newPathTrie() *pathTrie {
@@ -46,12 +47,16 @@ func (p *pathTrie) get(path string) http.Handler {
 		node = child
 	}
 	if len(paramValues) > 0 {
+		fmt.Println("node:", node)
 		if node.value == nil {
+			fmt.Println("got nil")
 			return nil
 		}
 		wrapH := func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println("wrapH get:", node.value)
 			keys := r.Context().Value(paramsCtxKey)
 			ks, ok := keys.([]string)
+			fmt.Println(ks, paramValues)
 			if !ok || len(paramValues) != len(ks) {
 				return
 			}
@@ -60,6 +65,7 @@ func (p *pathTrie) get(path string) http.Handler {
 				ctx = context.WithValue(ctx, pathName(ks[i]), paramValues[i])
 			}
 			r = r.WithContext(ctx)
+			fmt.Println("ctx:", r.Context())
 			node.value.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(wrapH)
