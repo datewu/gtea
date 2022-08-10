@@ -12,6 +12,7 @@ func newPathTrie() *pathTrie {
 	return root
 }
 
+// suffix '/' counts: path '/a' is diffent from path '/a/'
 type pathTrie struct {
 	value    http.Handler
 	children map[string]*pathTrie
@@ -31,20 +32,24 @@ func (p *pathTrie) get(path string) http.Handler {
 	return node.value
 }
 
+// suffix '/' counts: path '/a' is diffent from path '/a/'
 func (p *pathTrie) put(path string, value http.Handler) {
 	parts := strings.Split(path, "/")
 	node := p
 	for _, v := range parts {
+		// not skip '/' suffix
+		// if v == "" {
+		// 	continue
+		// }
 		child, ok := node.children[v]
 		if !ok {
-			path := &pathTrie{
+			child = &pathTrie{
 				value:    nil,
 				children: make(map[string]*pathTrie),
 			}
-			node.children[v] = path
-		} else {
-			node = child
+			node.children[v] = child
 		}
+		node = child
 	}
 	if node.value != nil {
 		panic("trie node value conflict")
