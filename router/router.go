@@ -46,5 +46,6 @@ func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {
 }
 
 func (ro *Router) ServeFiles(path string, root http.Dir) {
+	// TODO
 
 }
