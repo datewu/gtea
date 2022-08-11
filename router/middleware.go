@@ -15,10 +15,10 @@ func (r *Router) corsMiddleware() handler.Middleware {
 	return handler.CORSMiddleware(r.conf.CORS.TrustedOrigins)
 }
 
-func (r *Router) buildIns() []handler.Middleware {
+func (r *Router) aggBuildInMiddlewares() {
 	ms := []handler.Middleware{}
 	// note the order is siginificant
-	// outer if executed first
+	// outer if executed first and the low index
 	if r.conf.Limiter.Enabled {
 		ms = append(ms, r.rateLimitMiddleware())
 	}
@@ -30,5 +30,5 @@ func (r *Router) buildIns() []handler.Middleware {
 		r.Handle(http.MethodGet, "/debug/vars", expvar.Handler())
 		ms = append(ms, handler.MetricsMiddleware)
 	}
-	return ms
+	r.aggMiddleware = handler.AggregateMds(ms)
 }

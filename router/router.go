@@ -10,7 +10,7 @@ import (
 type Router struct {
 	conf                       *Config
 	trie                       *pathTrie
-	middleware                 handler.Middleware
+	aggMiddleware              handler.Middleware
 	NotFound, MethodNotAllowed http.HandlerFunc
 }
 
@@ -23,8 +23,8 @@ func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		ro.NotFound(iw, ir)
 	}
-	if ro.middleware != nil {
-		ro.middleware(innerest)(w, r)
+	if ro.aggMiddleware != nil {
+		ro.aggMiddleware(innerest)(w, r)
 		return
 	}
 	innerest(w, r)
@@ -36,21 +36,7 @@ func NewRouter(c *Config) *Router {
 	r.NotFound = func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}
-	ms := r.buildIns()
-	if len(ms) > 0 {
-		m := handler.VoidHandlerFunc
-		for i := len(ms) - 1; i >= 0; i-- {
-			m = ms[i](m)
-		}
-		// r.middleware =
-	}
-
-	// 	mm := g.r.ServeHTTP
-	// 	middlewares := append(g.middlewares, g.r.buildIns()...)
-	// 	for _, m := range middlewares {
-	// 		mm = m(mm)
-	// 	}
-	// 	g.serverHTTP = mm
+	r.aggBuildInMiddlewares()
 	return r
 }
 
