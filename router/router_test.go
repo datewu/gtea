@@ -19,11 +19,11 @@ func TestHealhCheck(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
 	g.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
-		t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
+		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 	}
 	expect := `{"status":"available"}`
 	if w.Body.String() != expect {
-		t.Fatalf("expected %q got %q", expect, w.Body.String())
+		t.Errorf("expected %q got %q", expect, w.Body.String())
 	}
 }
 
@@ -42,11 +42,11 @@ func TestRequestMethods(t *testing.T) {
 		req, _ := http.NewRequest(method, "/ok", nil)
 		g.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
-			t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
 		expect := `{"status":"available"}`
 		if w.Body.String() != expect {
-			t.Fatalf("expected %q got %q", expect, w.Body.String())
+			t.Errorf("expected %q got %q", expect, w.Body.String())
 		}
 	}
 	request(http.MethodGet)
@@ -70,11 +70,11 @@ func TestGroup(t *testing.T) {
 		req, _ := http.NewRequest("GET", path, nil)
 		g.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
-			t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
 		expect := `{"status":"available"}`
 		if w.Body.String() != expect {
-			t.Fatalf("expected %q got %q", expect, w.Body.String())
+			t.Errorf("expected %q got %q", expect, w.Body.String())
 		}
 	}
 	okPath("/a/ok")
@@ -85,11 +85,11 @@ func TestGroup(t *testing.T) {
 		req, _ := http.NewRequest("GET", path, nil)
 		g.ServeHTTP(w, req)
 		if w.Code != http.StatusNotFound {
-			t.Fatalf("expected %d got %d", http.StatusNotFound, w.Code)
+			t.Errorf("expected %d got %d", http.StatusNotFound, w.Code)
 		}
 		expect := `{"error":"the requested resource could not be found"}`
 		if w.Body.String() != expect {
-			t.Fatalf("expected %q got %q", expect, w.Body.String())
+			t.Errorf("expected %q got %q", expect, w.Body.String())
 		}
 	}
 	notOKPath("/a/notok")
@@ -105,23 +105,63 @@ func TestPathParams(t *testing.T) {
 	nameHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
 			"name": ReadPath(r, "name"),
-			"lol":  "name",
 		}
-		fmt.Println("lol show the handler")
+		handler.WriteJSON(w, http.StatusOK, data, nil)
+	}
+	nameCityHandle := func(w http.ResponseWriter, r *http.Request) {
+		data := map[string]string{
+			"name": ReadPath(r, "name"),
+			"city": ReadPath(r, "city"),
+		}
+		handler.WriteJSON(w, http.StatusOK, data, nil)
+	}
+	locationHandle := func(w http.ResponseWriter, r *http.Request) {
+		data := map[string]string{
+			"country": ReadPath(r, "country"),
+			"city":    ReadPath(r, "city"),
+		}
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}
 	g.Get("/hi/:name", nameHandle)
-	namePath := func(name string) {
+	g.Get("/hi/:name/:city", nameCityHandle)
+	g.Get("/hi/:country/:city/good", locationHandle)
+	nameReq := func(name string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/hi/"+name, nil)
 		g.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
-			t.Fatalf("expected %d got %d", http.StatusOK, w.Code)
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
 		expect := fmt.Sprintf(`{"name":"%s"}`, name)
 		if w.Body.String() != expect {
-			t.Fatalf("expected %q got %q", expect, w.Body.String())
+			t.Errorf("expected %q got %q", expect, w.Body.String())
 		}
 	}
-	namePath("joe-boy")
+	nameCityReq := func(n, c string) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/hi/"+n+"/"+c, nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := fmt.Sprintf(`{"city":"%s","name":"%s"}`, c, n)
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	locationReq := func(c, city string) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/hi/"+c+"/"+city+"/good", nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := fmt.Sprintf(`{"city":"%s","country":"%s"}`, city, c)
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	nameReq("joe-boy")
+	nameCityReq("luffe", "dao-lol")
+	locationReq("china", "hubei-wuhan")
 }

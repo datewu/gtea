@@ -2,15 +2,16 @@ package router
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 )
 
 type pathRegs string
-type pathName string
 
-const paramsCtxKey pathRegs = "path_param_names"
+const (
+	paramsCtxKey   pathRegs = "path_param_names"
+	paramsCtxValue pathRegs = "path_param_values"
+)
 const (
 	pathSeperator   = "/"
 	paramNote       = ":"
@@ -47,25 +48,12 @@ func (p *pathTrie) get(path string) http.Handler {
 		node = child
 	}
 	if len(paramValues) > 0 {
-		fmt.Println("node:", node)
 		if node.value == nil {
-			fmt.Println("got nil")
 			return nil
 		}
 		wrapH := func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println("wrapH get:", node.value)
-			keys := r.Context().Value(paramsCtxKey)
-			ks, ok := keys.([]string)
-			fmt.Println(ks, paramValues)
-			if !ok || len(paramValues) != len(ks) {
-				return
-			}
-			ctx := r.Context()
-			for i := range ks {
-				ctx = context.WithValue(ctx, pathName(ks[i]), paramValues[i])
-			}
+			ctx := context.WithValue(r.Context(), paramsCtxValue, paramValues)
 			r = r.WithContext(ctx)
-			fmt.Println("ctx:", r.Context())
 			node.value.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(wrapH)
@@ -80,17 +68,20 @@ func (p *pathTrie) put(path string, value http.Handler) {
 	regs := []string{}
 	for _, v := range parts {
 		child, ok := node.children[v]
+		if strings.HasPrefix(v, paramNote) {
+			regs = append(regs, strings.TrimPrefix(v, paramNote))
+			v = specialChildKey
+		}
 		if !ok {
-			child = &pathTrie{
-				value:    nil,
-				children: make(map[string]*pathTrie),
-			}
-			if strings.HasPrefix(v, paramNote) {
-				regs = append(regs, strings.TrimPrefix(v, ":"))
-				node.children[specialChildKey] = child
+			if special, o := node.children[specialChildKey]; o {
+				child = special
 			} else {
-				node.children[v] = child
+				child = &pathTrie{
+					value:    nil,
+					children: make(map[string]*pathTrie),
+				}
 			}
+			node.children[v] = child
 		}
 		node = child
 	}

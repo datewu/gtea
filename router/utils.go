@@ -8,9 +8,23 @@ import (
 
 // ReadPath returns the string param value in the request path
 func ReadPath(r *http.Request, name string) string {
-	v := r.Context().Value(pathName(name))
-	if value, ok := v.(string); ok {
-		return value
+	keys := r.Context().Value(paramsCtxKey)
+	ks, ok := keys.([]string)
+	if !ok {
+		return ""
+	}
+	values := r.Context().Value(paramsCtxValue)
+	vs, ok := values.([]string)
+	if !ok {
+		return ""
+	}
+	if len(ks) != len(vs) {
+		return ""
+	}
+	for i, v := range ks {
+		if v == name {
+			return vs[i]
+		}
 	}
 	return ""
 }
