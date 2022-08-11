@@ -1,38 +1,43 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/datewu/gtea/handler"
 )
 
 // RoutesGroup is a group of routes
 type RoutesGroup struct {
-	r           *bag
+	r           *Router
 	prefix      string
 	middlewares []handler.Middleware
-	once        sync.Once
-	serverHTTP  http.HandlerFunc
 }
 
-func (g *RoutesGroup) bound() {
-	g.r.rt.NotFound = handler.NotFoundMsg(
-		"the requested resource could not be found")
-	g.r.rt.MethodNotAllowed = handler.MethodNotAllowed
-	g.Get("/v1/healthcheck", handler.HealthCheck)
-	mm := g.r.rt.ServeHTTP
-	middlewares := append(g.middlewares, g.r.buildIns()...)
-	for _, m := range middlewares {
-		mm = m(mm)
+// NewRoutesGroup return a new routesgroup
+func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
+	if conf == nil {
+		return nil, errors.New("no router config provided")
 	}
-	g.serverHTTP = mm
+	r := NewRouter(conf)
+	r.NotFound = handler.NotFoundMsg(
+		"the requested resource could not be found")
+	r.HandleFunc(http.MethodGet, "/v1/healthcheck", handler.HealthCheck)
+	return &RoutesGroup{r: r}, nil
 }
+
+// func (g *RoutesGroup) bound() {
+// 	mm := g.r.ServeHTTP
+// 	middlewares := append(g.middlewares, g.r.buildIns()...)
+// 	for _, m := range middlewares {
+// 		mm = m(mm)
+// 	}
+// 	g.serverHTTP = mm
+// }
 
 func (g *RoutesGroup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.once.Do(g.bound)
-	g.serverHTTP(w, r)
+	g.r.ServeHTTP(w, r)
 }
 
 // Use add middleware to the group
@@ -60,7 +65,7 @@ func (g *RoutesGroup) HandleFunc(method, path string, handler http.HandlerFunc) 
 	for _, v := range g.middlewares {
 		handler = v(handler)
 	}
-	g.r.rt.HandleFunc(method, g.prefix+path, handler)
+	g.r.HandleFunc(method, g.prefix+path, handler)
 }
 
 // Get is a shortcut for NewHandler(http.MethodGet, path, handler)
@@ -92,5 +97,5 @@ func (g *RoutesGroup) Delete(path string, handler http.HandlerFunc) {
 func (g *RoutesGroup) Static(prefix string, dst string) {
 	path := strings.TrimSuffix(prefix, "/") + "/*filepath"
 	root := http.Dir(dst)
-	g.r.rt.ServeFiles(path, root)
+	g.r.ServeFiles(path, root)
 }

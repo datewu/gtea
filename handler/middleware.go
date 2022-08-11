@@ -13,6 +13,18 @@ import (
 // Middleware is a function that takes a http.HandlerFunc and returns a http.HandlerFunc.
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
+// VoidHandlerFunc ...
+var VoidHandlerFunc = http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+})
+
+// VoidMiddleware ...
+func VoidMiddleware(next http.HandlerFunc) Middleware {
+	mid := func(http.HandlerFunc) http.HandlerFunc {
+		return next
+	}
+	return mid
+}
+
 // RecoverPanicMiddleware middleware
 func RecoverPanicMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	middle := func(w http.ResponseWriter, r *http.Request) {
