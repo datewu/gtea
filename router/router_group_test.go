@@ -14,30 +14,112 @@ func TestUseMiddlerware(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	msgs := []string{
-		"inject msg 1 ",
-		"inject msg 2 ",
-		"inject msg 3 ",
-		"inject msg 4 ",
-		"inject msg 5 ",
+	_, ms, msg := newMiddlerwares(false)
+	g.Use(ms...)
+	buildInHealthEscapeAggMiddles := func() {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := `{"status":"available"}`
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
 	}
-	ms := []handler.Middleware{}
-	msg := ""
-	for _, v := range msgs {
-		ms = append(ms, newNormalMiddler(v))
-		msg += v
+	othersApplyMiddlewares := func() {
+		g.Get("/abc", handler.HealthCheck)
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/abc", nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := msg + `{"status":"available"}`
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	buildInHealthEscapeAggMiddles()
+	othersApplyMiddlewares()
+}
+
+func TestUseMiddlerwareWithAbort(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msgs, ms, msg := newMiddlerwares(true)
+	if len(ms) != len(msgs) {
+		t.Errorf("expected %d middlers got %d", len(msgs), len(ms))
 	}
 	g.Use(ms...)
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
-	g.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+	buildInHealthEscapeAggMiddles := func() {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := `{"status":"available"}`
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
 	}
-	expect := msg + `{"status":"available"}`
-	if w.Body.String() != expect {
-		t.Errorf("expected %q got %q", expect, w.Body.String())
+	othersApplyMiddlewares := func() {
+		g.Get("/abc", handler.HealthCheck)
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/abc", nil)
+		g.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := msg
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
 	}
+	buildInHealthEscapeAggMiddles()
+	othersApplyMiddlewares()
+}
+
+func TestGrupWithMiddlerware(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, ms, msg := newMiddlerwares(false)
+	hg := g.Group("/hello", ms...)
+	buildInHealthEscapeAggMiddles := func() {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
+		hg.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := `{"status":"available"}`
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	othersApplyMiddlewares := func() {
+		hg.Get("/abc", handler.HealthCheck)
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/hello/abc", nil)
+		hg.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+		}
+		expect := msg + `{"status":"available"}`
+		if w.Body.String() != expect {
+			t.Errorf("expected %q got %q", expect, w.Body.String())
+		}
+	}
+	buildInHealthEscapeAggMiddles()
+	othersApplyMiddlewares()
 }
 
 func TestGroupHealhCheck(t *testing.T) {

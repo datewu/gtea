@@ -128,6 +128,37 @@ func newNormalMiddler(injectMsg string) handler.Middleware {
 	return mid
 }
 
+func newMiddlerwares(abort bool) ([]string, []handler.Middleware, string) {
+	abortMsg := "abort followed http.handlers"
+	msgs := []string{
+		"inject msg 1 ",
+		"inject msg 2 ",
+		abortMsg,
+		"inject msg 3 ",
+		"inject msg 4 ",
+		"inject msg 5 ",
+	}
+	if !abort {
+		msgs[2] = "not abort"
+	}
+	ms := []handler.Middleware{}
+	for _, v := range msgs {
+		if v == abortMsg {
+			ms = append(ms, handler.AbortMiddleware)
+		} else {
+			ms = append(ms, newNormalMiddler(v))
+		}
+	}
+	msg := ""
+	for _, v := range msgs {
+		if v == abortMsg {
+			break
+		}
+		msg += v
+	}
+	return msgs, ms, msg
+}
+
 func TestNormalMiddler(t *testing.T) {
 	conf := &Config{}
 	r := NewRouter(conf)
@@ -150,19 +181,7 @@ func TestNormalMiddler(t *testing.T) {
 func TestAggNormalMiddler(t *testing.T) {
 	conf := &Config{}
 	r := NewRouter(conf)
-	msgs := []string{
-		"inject msg 1 ",
-		"inject msg 2 ",
-		"inject msg 3 ",
-		"inject msg 4 ",
-		"inject msg 5 ",
-	}
-	ms := []handler.Middleware{}
-	msg := ""
-	for _, v := range msgs {
-		ms = append(ms, newNormalMiddler(v))
-		msg += v
-	}
+	_, ms, msg := newMiddlerwares(false)
 	r.aggMiddleware = handler.AggregateMds(ms)
 	r.Get("/", handler.HealthCheck)
 	w := httptest.NewRecorder()
@@ -180,30 +199,7 @@ func TestAggNormalMiddler(t *testing.T) {
 func TestAggNormalMiddlerWithAbort(t *testing.T) {
 	conf := &Config{}
 	r := NewRouter(conf)
-	abortMsg := "abort followed http.handlers"
-	msgs := []string{
-		"inject msg 1 ",
-		"inject msg 2 ",
-		abortMsg,
-		"inject msg 3 ",
-		"inject msg 4 ",
-		"inject msg 5 ",
-	}
-	ms := []handler.Middleware{}
-	for _, v := range msgs {
-		if v == abortMsg {
-			ms = append(ms, handler.AbortMiddleware)
-		} else {
-			ms = append(ms, newNormalMiddler(v))
-		}
-	}
-	msg := ""
-	for _, v := range msgs {
-		if v == abortMsg {
-			break
-		}
-		msg += v
-	}
+	msgs, ms, msg := newMiddlerwares(true)
 	if len(ms) != len(msgs) {
 		t.Errorf("expected %d middlers got %d", len(msgs), len(ms))
 	}

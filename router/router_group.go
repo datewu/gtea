@@ -23,6 +23,8 @@ func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
 	r := NewRouter(conf)
 	r.NotFound = handler.NotFoundMsg(
 		"the requested resource could not be found")
+
+	// this "/v1/healthcheck" escape all routerGroup.aggMiddleware
 	r.HandleFunc(http.MethodGet, "/v1/healthcheck", handler.HealthCheck)
 	return &RoutesGroup{r: r}, nil
 }
