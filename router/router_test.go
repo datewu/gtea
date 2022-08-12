@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,19 +10,27 @@ import (
 	"github.com/datewu/gtea/handler"
 )
 
-func TestRouterHealhCheck(t *testing.T) {
-	conf := &Config{}
-	r := NewRouter(conf)
+func reqTestHelper(method, path string, body io.Reader,
+	h http.Handler, code int, expect string, t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusNotFound {
-		t.Errorf("expected %d got %d", http.StatusNotFound, w.Code)
+	req, _ := http.NewRequest(method, path, body)
+	h.ServeHTTP(w, req)
+	if w.Code != code {
+		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 	}
-	expect := ""
 	if w.Body.String() != expect {
 		t.Errorf("expected %q got %q", expect, w.Body.String())
 	}
+}
+
+func getReqHelper(path string, h http.Handler, code int, expect string, t *testing.T) {
+	reqTestHelper(http.MethodGet, path, nil, h, code, expect, t)
+}
+
+func TestRouterHealhCheck(t *testing.T) {
+	conf := &Config{}
+	r := NewRouter(conf)
+	getReqHelper("/v1/healthcheck", r, http.StatusNotFound, "", t)
 }
 
 func TestRequestMethods(t *testing.T) {
@@ -33,16 +42,9 @@ func TestRequestMethods(t *testing.T) {
 	ro.Put("/ok", handler.HealthCheck)
 	ro.Delete("/ok", handler.HealthCheck)
 	request := func(method string) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest(method, "/ok", nil)
-		ro.ServeHTTP(w, req)
-		if w.Code != http.StatusOK {
-			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-		}
 		expect := `{"status":"available"}`
-		if w.Body.String() != expect {
-			t.Errorf("expected %q got %q", expect, w.Body.String())
-		}
+		reqTestHelper(method, "/ok", nil, ro,
+			http.StatusOK, expect, t)
 	}
 	request(http.MethodGet)
 	request(http.MethodPost)
@@ -77,40 +79,16 @@ func TestPathParams(t *testing.T) {
 	ro.Get("/hi/:name/:city", nameCityHandle)
 	ro.Get("/hi/:country/:city/good", locationHandle)
 	nameReq := func(name string) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/hi/"+name, nil)
-		ro.ServeHTTP(w, req)
-		if w.Code != http.StatusOK {
-			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-		}
 		expect := fmt.Sprintf(`{"name":"%s"}`, name)
-		if w.Body.String() != expect {
-			t.Errorf("expected %q got %q", expect, w.Body.String())
-		}
+		getReqHelper("/hi/"+name, ro, http.StatusOK, expect, t)
 	}
 	nameCityReq := func(n, c string) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/hi/"+n+"/"+c, nil)
-		ro.ServeHTTP(w, req)
-		if w.Code != http.StatusOK {
-			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-		}
 		expect := fmt.Sprintf(`{"city":"%s","name":"%s"}`, c, n)
-		if w.Body.String() != expect {
-			t.Errorf("expected %q got %q", expect, w.Body.String())
-		}
+		getReqHelper("/hi/"+n+"/"+c, ro, http.StatusOK, expect, t)
 	}
 	locationReq := func(c, city string) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/hi/"+c+"/"+city+"/good", nil)
-		ro.ServeHTTP(w, req)
-		if w.Code != http.StatusOK {
-			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-		}
 		expect := fmt.Sprintf(`{"city":"%s","country":"%s"}`, city, c)
-		if w.Body.String() != expect {
-			t.Errorf("expected %q got %q", expect, w.Body.String())
-		}
+		getReqHelper("/hi/"+c+"/"+city+"/good", ro, http.StatusOK, expect, t)
 	}
 	nameReq("joe-boy")
 	nameCityReq("luffe", "dao-lol")
@@ -166,16 +144,8 @@ func TestNormalMiddler(t *testing.T) {
 	r.aggMiddleware = newNormalMiddler(msg)
 	r.Get("/", handler.HealthCheck)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/", nil)
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-	}
 	expect := msg + `{"status":"available"}`
-	if w.Body.String() != expect {
-		t.Errorf("expected %q got %q", expect, w.Body.String())
-	}
+	getReqHelper("/", r, http.StatusOK, expect, t)
 }
 
 func TestAggNormalMiddler(t *testing.T) {
@@ -184,16 +154,8 @@ func TestAggNormalMiddler(t *testing.T) {
 	_, ms, msg := newMiddlerwares(false)
 	r.aggMiddleware = handler.AggregateMds(ms)
 	r.Get("/", handler.HealthCheck)
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/", nil)
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-	}
 	expect := msg + `{"status":"available"}`
-	if w.Body.String() != expect {
-		t.Errorf("expected %q got %q", expect, w.Body.String())
-	}
+	getReqHelper("/", r, http.StatusOK, expect, t)
 }
 
 func TestAggNormalMiddlerWithAbort(t *testing.T) {
@@ -205,14 +167,6 @@ func TestAggNormalMiddlerWithAbort(t *testing.T) {
 	}
 	r.aggMiddleware = handler.AggregateMds(ms)
 	r.Get("/", handler.HealthCheck)
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/", nil)
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
-	}
 	expect := msg
-	if w.Body.String() != expect {
-		t.Errorf("expected %q got %q", expect, w.Body.String())
-	}
+	getReqHelper("/", r, http.StatusOK, expect, t)
 }
