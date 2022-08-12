@@ -33,6 +33,23 @@ func TestRouterHealhCheck(t *testing.T) {
 	getReqHelper("/v1/healthcheck", r, http.StatusNotFound, "", t)
 }
 
+func TestSuffix(t *testing.T) {
+	conf := &Config{}
+	r := NewRouter(conf)
+
+	r.Get("/health", handler.HealthCheck)
+	r.Get("/abc/", handler.HealthCheck)
+	r.Get("/", handler.HealthCheck)
+	expect := `{"status":"available"}`
+	getReqHelper("/health", r, http.StatusOK, expect, t)
+	getReqHelper("/health/", r, http.StatusNotFound, "", t)
+
+	getReqHelper("/abc/", r, http.StatusOK, expect, t)
+	getReqHelper("/abc", r, http.StatusNotFound, "", t)
+
+	getReqHelper("/", r, http.StatusOK, expect, t)
+	getReqHelper("/a", r, http.StatusNotFound, "", t)
+}
 func TestRequestMethods(t *testing.T) {
 	conf := &Config{}
 	ro := NewRouter(conf)

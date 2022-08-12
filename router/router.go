@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/datewu/gtea/handler"
 )
@@ -57,8 +58,8 @@ func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {
 
 func (r *Router) ServeFiles(path string, root http.Dir) {
 	fs := http.FileServer(root)
-	// http.ServeFile()
 	h := http.StripPrefix(path, fs)
+	path = strings.TrimSuffix(path, "/")
 	r.trie.putEnd(http.MethodGet+path, h)
 }
 

@@ -19,7 +19,8 @@ func main() {
 	r.Post("/ok", handler.HealthCheck)
 	r.Put("/ok", handler.HealthCheck)
 	r.Delete("/ok", handler.HealthCheck)
-	r.Static("/abc", "../")
+	r.Static("/abc", "../../")
+	r.Static("/", "../")
 	r.Debug()
 	srv := &http.Server{
 		Addr:    ":8080",
