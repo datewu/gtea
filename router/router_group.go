@@ -3,7 +3,6 @@ package router
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/datewu/gtea/handler"
 )
@@ -95,8 +94,6 @@ func (g *RoutesGroup) Delete(path string, handler http.HandlerFunc) {
 }
 
 // Static is a shortcut for NewHandler(http.MethodDelete, path, handler)
-func (g *RoutesGroup) Static(prefix string, dst string) {
-	path := strings.TrimSuffix(prefix, "/") + "/*filepath"
-	root := http.Dir(dst)
-	g.r.ServeFiles(path, root)
+func (g *RoutesGroup) Static(path string, dst string) {
+	g.r.Static(path, dst)
 }

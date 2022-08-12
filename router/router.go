@@ -2,7 +2,6 @@ package router
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/datewu/gtea/handler"
 )
@@ -13,6 +12,10 @@ type Router struct {
 	trie                       *pathTrie
 	aggMiddleware              handler.Middleware
 	NotFound, MethodNotAllowed http.HandlerFunc
+}
+
+func (r *Router) Debug() {
+	r.trie.walk(1)
 }
 
 func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -52,39 +55,39 @@ func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {
 	r.Handle(method, path, hf)
 }
 
-func (ro *Router) ServeFiles(path string, root http.Dir) {
-	// TODO
-
+func (r *Router) ServeFiles(path string, root http.Dir) {
+	fs := http.FileServer(root)
+	// http.ServeFile()
+	h := http.StripPrefix(path, fs)
+	r.trie.putEnd(http.MethodGet+path, h)
 }
 
-// Get is a shortcut for NewHandler(http.MethodGet, path, handler)
+// Get is a shortcut for HandleFunc(http.MethodGet, path, handler)
 func (r *Router) Get(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodGet, path, handler)
 }
 
-// Post is a shortcut for NewHandler(http.MethodPost, path, handler)
+// Post is a shortcut for HandleFunc(http.MethodPost, path, handler)
 func (r *Router) Post(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodPost, path, handler)
 }
 
-// Put is a shortcut for NewHandler(http.MethodPut, path, handler)
+// Put is a shortcut for HandleFunc(http.MethodPut, path, handler)
 func (r *Router) Put(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodPut, path, handler)
 }
 
-// Patch is a shortcut for NewHandler(http.MethodPatch, path, handler)
+// Patch is a shortcut for HandleFunc(http.MethodPatch, path, handler)
 func (r *Router) Patch(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodPatch, path, handler)
 }
 
-// Delete is a shortcut for NewHandler(http.MethodDelete, path, handler)
+// Delete is a shortcut for HandleFunc(http.MethodDelete, path, handler)
 func (r *Router) Delete(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodDelete, path, handler)
 }
 
-// Static is a shortcut for NewHandler(http.MethodDelete, path, handler)
-func (r *Router) Static(prefix string, dst string) {
-	path := strings.TrimSuffix(prefix, "/") + "/*filepath"
-	root := http.Dir(dst)
-	r.ServeFiles(path, root)
+// Static is a shortcut for HandleFunc(http.MethodDelete, path, handler)
+func (r *Router) Static(path string, dst string) {
+	r.ServeFiles(path, http.Dir(dst))
 }
