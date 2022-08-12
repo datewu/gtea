@@ -9,25 +9,38 @@ import (
 )
 
 func TestUseMiddlerware(t *testing.T) {
-	// TODO
 	rconf := &Config{}
 	g, err := NewRoutesGroup(rconf)
 	if err != nil {
 		t.Fatal(err)
 	}
+	msgs := []string{
+		"inject msg 1 ",
+		"inject msg 2 ",
+		"inject msg 3 ",
+		"inject msg 4 ",
+		"inject msg 5 ",
+	}
+	ms := []handler.Middleware{}
+	msg := ""
+	for _, v := range msgs {
+		ms = append(ms, newNormalMiddler(v))
+		msg += v
+	}
+	g.Use(ms...)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
 	g.ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 	}
-	expect := `{"status":"available"}`
+	expect := msg + `{"status":"available"}`
 	if w.Body.String() != expect {
 		t.Errorf("expected %q got %q", expect, w.Body.String())
 	}
 }
 
-func TestHealhCheck(t *testing.T) {
+func TestGroupHealhCheck(t *testing.T) {
 	rconf := &Config{}
 	g, err := NewRoutesGroup(rconf)
 	if err != nil {

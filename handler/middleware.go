@@ -22,20 +22,32 @@ var VoidMiddleware = Middleware(func(next http.HandlerFunc) http.HandlerFunc {
 	return next
 })
 
+// AbortMiddleware ...
+var AbortMiddleware = Middleware(func(next http.HandlerFunc) http.HandlerFunc {
+	return VoidHandlerFunc
+})
+
 // AggregateMds aggrate middleware to one
 // lower index ms[i] more outer middleware
 func AggregateMds(ms []Middleware) Middleware {
-	if len(ms) == 0 {
+	size := len(ms)
+	if size == 0 {
 		return nil
 	}
 	md := func(next http.HandlerFunc) http.HandlerFunc {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			for _, v := range ms {
-				if v == nil {
+			for i := size - 1; i >= 0; i-- {
+				if ms[i] == nil {
 					continue
 				}
-				next = v(next)
+				next = ms[i](next)
 			}
+			// for _, v := range ms {
+			// 	if v == nil {
+			// 		continue
+			// 	}
+			// 	next = v(next)
+			// }
 			next(w, r)
 		}
 		return h

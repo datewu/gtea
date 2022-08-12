@@ -117,11 +117,106 @@ func TestPathParams(t *testing.T) {
 	locationReq("china", "hubei-wuhan")
 }
 
-func newMiddler(i int) handler.Middleware {
-	return handler.VoidMiddleware
+func newNormalMiddler(injectMsg string) handler.Middleware {
+	mid := func(next http.HandlerFunc) http.HandlerFunc {
+		res := func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(injectMsg))
+			next(w, r)
+		}
+		return res
+	}
+	return mid
 }
 
-func TestMiddlers(t *testing.T) {
-	m1 := newMiddler(1)
-	fmt.Println("todo:", m1)
+func TestNormalMiddler(t *testing.T) {
+	conf := &Config{}
+	r := NewRouter(conf)
+	msg := " inject a msg "
+	r.aggMiddleware = newNormalMiddler(msg)
+	r.Get("/", handler.HealthCheck)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+	}
+	expect := msg + `{"status":"available"}`
+	if w.Body.String() != expect {
+		t.Errorf("expected %q got %q", expect, w.Body.String())
+	}
+}
+
+func TestAggNormalMiddler(t *testing.T) {
+	conf := &Config{}
+	r := NewRouter(conf)
+	msgs := []string{
+		"inject msg 1 ",
+		"inject msg 2 ",
+		"inject msg 3 ",
+		"inject msg 4 ",
+		"inject msg 5 ",
+	}
+	ms := []handler.Middleware{}
+	msg := ""
+	for _, v := range msgs {
+		ms = append(ms, newNormalMiddler(v))
+		msg += v
+	}
+	r.aggMiddleware = handler.AggregateMds(ms)
+	r.Get("/", handler.HealthCheck)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+	}
+	expect := msg + `{"status":"available"}`
+	if w.Body.String() != expect {
+		t.Errorf("expected %q got %q", expect, w.Body.String())
+	}
+}
+
+func TestAggNormalMiddlerWithAbort(t *testing.T) {
+	conf := &Config{}
+	r := NewRouter(conf)
+	abortMsg := "abort followed http.handlers"
+	msgs := []string{
+		"inject msg 1 ",
+		"inject msg 2 ",
+		abortMsg,
+		"inject msg 3 ",
+		"inject msg 4 ",
+		"inject msg 5 ",
+	}
+	ms := []handler.Middleware{}
+	for _, v := range msgs {
+		if v == abortMsg {
+			ms = append(ms, handler.AbortMiddleware)
+		} else {
+			ms = append(ms, newNormalMiddler(v))
+		}
+	}
+	msg := ""
+	for _, v := range msgs {
+		if v == abortMsg {
+			break
+		}
+		msg += v
+	}
+	if len(ms) != len(msgs) {
+		t.Errorf("expected %d middlers got %d", len(msgs), len(ms))
+	}
+	r.aggMiddleware = handler.AggregateMds(ms)
+	r.Get("/", handler.HealthCheck)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+	}
+	expect := msg
+	if w.Body.String() != expect {
+		t.Errorf("expected %q got %q", expect, w.Body.String())
+	}
 }
