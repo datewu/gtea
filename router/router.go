@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/datewu/gtea/handler"
 )
@@ -15,7 +16,7 @@ type Router struct {
 }
 
 func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	innerest := func(iw http.ResponseWriter, ir *http.Request) {
+	last := func(iw http.ResponseWriter, ir *http.Request) {
 		tHandler := ro.trie.get(ir.Method + ir.URL.Path)
 		if tHandler != nil {
 			tHandler.ServeHTTP(iw, ir)
@@ -24,10 +25,10 @@ func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ro.NotFound(iw, ir)
 	}
 	if ro.aggMiddleware != nil {
-		ro.aggMiddleware(innerest)(w, r)
+		ro.aggMiddleware(last)(w, r)
 		return
 	}
-	innerest(w, r)
+	last(w, r)
 }
 
 func NewRouter(c *Config) *Router {
@@ -54,4 +55,36 @@ func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {
 func (ro *Router) ServeFiles(path string, root http.Dir) {
 	// TODO
 
+}
+
+// Get is a shortcut for NewHandler(http.MethodGet, path, handler)
+func (r *Router) Get(path string, handler http.HandlerFunc) {
+	r.HandleFunc(http.MethodGet, path, handler)
+}
+
+// Post is a shortcut for NewHandler(http.MethodPost, path, handler)
+func (r *Router) Post(path string, handler http.HandlerFunc) {
+	r.HandleFunc(http.MethodPost, path, handler)
+}
+
+// Put is a shortcut for NewHandler(http.MethodPut, path, handler)
+func (r *Router) Put(path string, handler http.HandlerFunc) {
+	r.HandleFunc(http.MethodPut, path, handler)
+}
+
+// Patch is a shortcut for NewHandler(http.MethodPatch, path, handler)
+func (r *Router) Patch(path string, handler http.HandlerFunc) {
+	r.HandleFunc(http.MethodPatch, path, handler)
+}
+
+// Delete is a shortcut for NewHandler(http.MethodDelete, path, handler)
+func (r *Router) Delete(path string, handler http.HandlerFunc) {
+	r.HandleFunc(http.MethodDelete, path, handler)
+}
+
+// Static is a shortcut for NewHandler(http.MethodDelete, path, handler)
+func (r *Router) Static(prefix string, dst string) {
+	path := strings.TrimSuffix(prefix, "/") + "/*filepath"
+	root := http.Dir(dst)
+	r.ServeFiles(path, root)
 }

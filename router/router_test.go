@@ -9,38 +9,33 @@ import (
 	"github.com/datewu/gtea/handler"
 )
 
-func TestHealhCheck(t *testing.T) {
-	rconf := &Config{}
-	g, err := NewRoutesGroup(rconf)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestRouterHealhCheck(t *testing.T) {
+	conf := &Config{}
+	r := NewRouter(conf)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
-	g.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected %d got %d", http.StatusNotFound, w.Code)
 	}
-	expect := `{"status":"available"}`
+	expect := ""
 	if w.Body.String() != expect {
 		t.Errorf("expected %q got %q", expect, w.Body.String())
 	}
 }
 
 func TestRequestMethods(t *testing.T) {
-	rconf := &Config{}
-	g, err := NewRoutesGroup(rconf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	g.Get("/ok", handler.HealthCheck)
-	g.Post("/ok", handler.HealthCheck)
-	g.Put("/ok", handler.HealthCheck)
-	g.Delete("/ok", handler.HealthCheck)
+	conf := &Config{}
+	ro := NewRouter(conf)
+
+	ro.Get("/ok", handler.HealthCheck)
+	ro.Post("/ok", handler.HealthCheck)
+	ro.Put("/ok", handler.HealthCheck)
+	ro.Delete("/ok", handler.HealthCheck)
 	request := func(method string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest(method, "/ok", nil)
-		g.ServeHTTP(w, req)
+		ro.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
 			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
@@ -56,11 +51,8 @@ func TestRequestMethods(t *testing.T) {
 }
 
 func TestPathParams(t *testing.T) {
-	rconf := &Config{}
-	g, err := NewRoutesGroup(rconf)
-	if err != nil {
-		t.Fatal(err)
-	}
+	conf := &Config{}
+	ro := NewRouter(conf)
 	nameHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
 			"name": ReadPath(r, "name"),
@@ -81,13 +73,13 @@ func TestPathParams(t *testing.T) {
 		}
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}
-	g.Get("/hi/:name", nameHandle)
-	g.Get("/hi/:name/:city", nameCityHandle)
-	g.Get("/hi/:country/:city/good", locationHandle)
+	ro.Get("/hi/:name", nameHandle)
+	ro.Get("/hi/:name/:city", nameCityHandle)
+	ro.Get("/hi/:country/:city/good", locationHandle)
 	nameReq := func(name string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/hi/"+name, nil)
-		g.ServeHTTP(w, req)
+		ro.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
 			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
@@ -99,7 +91,7 @@ func TestPathParams(t *testing.T) {
 	nameCityReq := func(n, c string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/hi/"+n+"/"+c, nil)
-		g.ServeHTTP(w, req)
+		ro.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
 			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
@@ -111,7 +103,7 @@ func TestPathParams(t *testing.T) {
 	locationReq := func(c, city string) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/hi/"+c+"/"+city+"/good", nil)
-		g.ServeHTTP(w, req)
+		ro.ServeHTTP(w, req)
 		if w.Code != http.StatusOK {
 			t.Errorf("expected %d got %d", http.StatusOK, w.Code)
 		}
@@ -123,4 +115,13 @@ func TestPathParams(t *testing.T) {
 	nameReq("joe-boy")
 	nameCityReq("luffe", "dao-lol")
 	locationReq("china", "hubei-wuhan")
+}
+
+func newMiddler(i int) handler.Middleware {
+	return handler.VoidMiddleware
+}
+
+func TestMiddlers(t *testing.T) {
+	m1 := newMiddler(1)
+	fmt.Println("todo:", m1)
 }

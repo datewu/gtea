@@ -27,6 +27,24 @@ func TestUseMiddlerware(t *testing.T) {
 	}
 }
 
+func TestHealhCheck(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/v1/healthcheck", nil)
+	g.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected %d got %d", http.StatusOK, w.Code)
+	}
+	expect := `{"status":"available"}`
+	if w.Body.String() != expect {
+		t.Errorf("expected %q got %q", expect, w.Body.String())
+	}
+}
+
 func TestGroup(t *testing.T) {
 	rconf := &Config{}
 	g, err := NewRoutesGroup(rconf)

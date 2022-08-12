@@ -18,8 +18,8 @@ var VoidHandlerFunc = http.HandlerFunc(func(http.ResponseWriter, *http.Request) 
 })
 
 // VoidMiddleware ...
-var VoidMiddleware = Middleware(func(inner http.HandlerFunc) http.HandlerFunc {
-	return inner
+var VoidMiddleware = Middleware(func(next http.HandlerFunc) http.HandlerFunc {
+	return next
 })
 
 // AggregateMds aggrate middleware to one
@@ -28,16 +28,14 @@ func AggregateMds(ms []Middleware) Middleware {
 	if len(ms) == 0 {
 		return nil
 	}
-	agg := VoidHandlerFunc
-	for _, v := range ms {
-		if v == nil {
-			continue
-		}
-		agg = v(agg)
-	}
 	md := func(next http.HandlerFunc) http.HandlerFunc {
 		h := func(w http.ResponseWriter, r *http.Request) {
-			agg(w, r)
+			for _, v := range ms {
+				if v == nil {
+					continue
+				}
+				next = v(next)
+			}
 			next(w, r)
 		}
 		return h
