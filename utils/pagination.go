@@ -1,4 +1,4 @@
-package gtea
+package utils
 
 // Pagination represents a pagination object.
 type Pagination struct {

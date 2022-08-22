@@ -1,6 +1,7 @@
 package gtea
 
 import (
+	"context"
 	"expvar"
 	"os"
 	"runtime"
@@ -10,31 +11,19 @@ import (
 	"github.com/datewu/gtea/jsonlog"
 )
 
+type contextKey string
+
 // App is the main application object.
 type App struct {
-	Logger   *jsonlog.Logger
-	metaData map[string]string
-	config   *Config
-	wg       sync.WaitGroup
-	exitFns  []func()
-}
-
-// AddMetaData adds meta data to the application by key.
-// skipped if the key already exists.
-func (a *App) AddMetaData(key, value string) {
-	if _, ok := a.metaData[key]; ok {
-		return
-	}
-	a.metaData[key] = value
-}
-
-// GetMetaData returns the meta data of the application by key.
-func (a *App) GetMetaData(key string) string {
-	return a.metaData[key]
+	ctx     context.Context
+	config  *Config
+	wg      sync.WaitGroup
+	Logger  *jsonlog.Logger
+	exitFns []func()
 }
 
 // NewApp creates a new application object.
-func NewApp(cfg *Config) *App {
+func NewApp(ctx context.Context, cfg *Config) *App {
 	logger := jsonlog.New(os.Stdout, cfg.LogLevel)
 	if cfg.Metrics {
 		expvar.Publish("goroutines", expvar.Func(func() interface{} {
@@ -45,9 +34,9 @@ func NewApp(cfg *Config) *App {
 		}))
 	}
 	app := &App{
-		metaData: make(map[string]string),
-		config:   cfg,
-		Logger:   logger,
+		ctx:    ctx,
+		config: cfg,
+		Logger: logger,
 	}
 	return app
 }
@@ -55,5 +44,23 @@ func NewApp(cfg *Config) *App {
 // DefaultApp is the default application object.
 func DefaultApp() *App {
 	cfg := DefaultConfig()
-	return NewApp(cfg)
+	return NewApp(context.Background(), cfg)
+}
+
+// Config is the configuration for the application
+type Config struct {
+	Port     int
+	Env      string
+	Metrics  bool
+	LogLevel jsonlog.Level
+}
+
+// DefaultConfig is the default configuration for the application
+func DefaultConfig() *Config {
+	return &Config{
+		Port:     8080,
+		Env:      "development",
+		Metrics:  false,
+		LogLevel: jsonlog.LevelInfo,
+	}
 }
