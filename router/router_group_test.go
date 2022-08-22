@@ -105,7 +105,12 @@ func TestGroupRequestMethods(t *testing.T) {
 }
 
 func TestGroup(t *testing.T) {
-	rconf := &Config{}
+	rconf := &Config{
+		Metrics: true,
+	}
+	rconf.Limiter.Burst = 10
+	rconf.Limiter.Rps = 100
+	rconf.Limiter.Enabled = true
 	g, err := NewRoutesGroup(rconf)
 	if err != nil {
 		t.Fatal(err)
@@ -127,4 +132,9 @@ func TestGroup(t *testing.T) {
 	}
 	notOKPath("/a/notok")
 	notOKPath("/c/ok")
+
+	c := g.Group("/api/v1")
+	c.Get("/", handler.HealthCheck)
+	notOKPath("/api/v1")
+	okPath("/api/v1/")
 }

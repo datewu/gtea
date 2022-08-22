@@ -42,12 +42,6 @@ func AggregateMds(ms []Middleware) Middleware {
 				}
 				next = ms[i](next)
 			}
-			// for _, v := range ms {
-			// 	if v == nil {
-			// 		continue
-			// 	}
-			// 	next = v(next)
-			// }
 			next(w, r)
 		}
 		return h
@@ -70,11 +64,14 @@ func RecoverPanicMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return middle
 }
 
+var (
+	totalRequestReceived            = expvar.NewInt("total_requests_received")
+	totalResponsesSend              = expvar.NewInt("total_responses_send")
+	totalProcessingTimeMicroseconds = expvar.NewInt("total_processing_time_us")
+)
+
 // MetricsMiddleware middleware enable expvar profile
 func MetricsMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	totalRequestReceived := expvar.NewInt("total_requests_received")
-	totalResponsesSend := expvar.NewInt("total_responses_send")
-	totalProcessingTimeMicroseconds := expvar.NewInt("total_processing_time_us")
 	middle := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		totalRequestReceived.Add(1)
@@ -113,6 +110,10 @@ func RateLimitMiddleware(rps float64, brust int) Middleware {
 
 		ratelimit := func(w http.ResponseWriter, r *http.Request) {
 			h := NewHandleHelper(w, r)
+			if r.RemoteAddr == "" {
+				// for httptest.NewRecorder()
+				r.RemoteAddr = "httptest.client:35256"
+			}
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
 				h.ServerErr(err)
