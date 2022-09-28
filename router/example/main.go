@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/datewu/gtea/handler"
@@ -8,7 +9,7 @@ import (
 )
 
 func main() {
-	conf := &router.Config{}
+	conf := &router.Config{Debug: true}
 	r := router.NewRouter(conf)
 
 	r.Get("/ok", handler.HealthCheck)
@@ -21,10 +22,9 @@ func main() {
 	r.Delete("/ok", handler.HealthCheck)
 	r.Static("/abc", "../../")
 	r.Static("/", "../")
-	r.Debug()
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":8090",
 		Handler: r,
 	}
-	srv.ListenAndServe()
+	fmt.Println("start serve", srv.ListenAndServe())
 }

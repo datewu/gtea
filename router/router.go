@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/datewu/gtea/handler"
 )
@@ -15,8 +16,18 @@ type Router struct {
 	NotFound, MethodNotAllowed http.HandlerFunc
 }
 
-func (r *Router) Debug() {
-	r.trie.walk(1)
+var theRouter *Router
+
+func init() {
+	go func() {
+		// no need to sleep
+		time.Sleep(1 * time.Second)
+		if theRouter != nil {
+			if theRouter.conf.Debug {
+				theRouter.trie.walk(1)
+			}
+		}
+	}()
 }
 
 func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +53,8 @@ func NewRouter(c *Config) *Router {
 		w.WriteHeader(http.StatusNotFound)
 	}
 	r.aggBuildInMiddlewares()
-	return r
+	theRouter = r
+	return theRouter
 }
 
 func (r *Router) Handle(method, path string, h http.Handler) {
