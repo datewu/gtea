@@ -1,7 +1,6 @@
 package router
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,10 +13,9 @@ const (
 	paramsCtxValue pathRegs = "path_param_values"
 )
 const (
-	pathSeperator  = "/"
-	paramNote      = ":"
-	regexpChildKey = ":REG" + pathSeperator + ":"
-	endChildKey    = ":END" + pathSeperator + ":"
+	pathSeperator = "/"
+	paramNote     = ":"
+	endChildKey   = ":END" + pathSeperator + ":"
 )
 
 func newPathTrie() *pathTrie {
@@ -36,76 +34,56 @@ type pathTrie struct {
 // get return immediately when match endChildKey, but do NOT
 // ignore plain child(include regex child) on the same level
 func (p *pathTrie) get(path string) http.Handler {
-	parts := strings.Split(strings.TrimSpace(path), pathSeperator)
-	node := p
-	paramValues := []string{}
-	wrapHandler := func(h http.Handler, vs []string) http.Handler {
-		if len(vs) > 0 && h != nil {
-			fn := func(w http.ResponseWriter, r *http.Request) {
-				ctx := context.WithValue(r.Context(), paramsCtxValue, paramValues)
-				r = r.WithContext(ctx)
-				h.ServeHTTP(w, r)
-			}
-			return http.HandlerFunc(fn)
-		}
-		return h
+	path = strings.Trim(strings.TrimSpace(path), pathSeperator)
+	if path == "" {
+		return nil
 	}
-	for _, v := range parts {
-		child, ok := node.children[v]
-		if !ok {
-			if s, ok := node.children[regexpChildKey]; ok {
-				paramValues = append(paramValues, v)
-				node = s
-				continue
-			}
-			if e, ok := node.children[endChildKey]; ok {
-				return wrapHandler(e.value, paramValues)
-			}
-			return nil
-		}
-		node = child
+	if p.children == nil {
+		return nil
 	}
-	return wrapHandler(node.value, paramValues)
+	ks := strings.Split(path, pathSeperator)
+	key := ks[0]
+	child, ok := p.children[key]
+	if ok {
+		if len(ks) == 1 {
+			return child.value
+		}
+		return child.get(strings.Join(ks[1:], pathSeperator))
+	}
+	return nil
 }
 
-// suffix '/' counts: path '/a' is diffent from path '/a/'
+// suffix '/' will be trimed
 func (p *pathTrie) put(path string, value http.Handler) *pathTrie {
-	parts := strings.Split(strings.TrimSpace(path), pathSeperator)
-	node := p
-	regs := []string{}
-	for _, v := range parts {
-		child, ok := node.children[v]
-		if strings.HasPrefix(v, paramNote) {
-			regs = append(regs, strings.TrimPrefix(v, paramNote))
-			v = regexpChildKey
-		}
-		if !ok {
-			if special, o := node.children[regexpChildKey]; o {
-				child = special
+	path = strings.Trim(strings.TrimSpace(path), pathSeperator)
+	if path == "" {
+		return nil
+	}
+	if p.children == nil {
+		p.children = make(map[string]*pathTrie)
+	}
+	node := newPathTrie()
+	node.value = value
+	ks := strings.Split(path, pathSeperator)
+	key := ks[0]
+	child, ok := p.children[key]
+	if ok {
+		if len(ks) == 1 {
+			if child.value != nil {
+				panic("node conflict")
 			} else {
-				child = &pathTrie{
-					value:    nil,
-					children: make(map[string]*pathTrie),
-				}
+				child.value = value
+				return child
 			}
-			node.children[v] = child
 		}
-		node = child
+		return child.put(strings.Join(ks[1:], pathSeperator), value)
 	}
-	if node.value != nil {
-		panic("trie node value conflict")
-	}
-	if len(regs) > 0 {
-		wrapH := func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), paramsCtxKey, regs)
-			r = r.WithContext(ctx)
-			value.ServeHTTP(w, r)
-		}
-		node.value = http.HandlerFunc(wrapH)
+	if len(ks) == 1 {
+		p.children[key] = node
 		return node
 	}
-	node.value = value
-	return node
+	p.children[key] = newPathTrie()
+	return p.children[key].put(strings.Join(ks[1:], pathSeperator), value)
 }
 
 // putEnd stop the get the the endChildKey
@@ -119,18 +97,38 @@ func (p *pathTrie) putEnd(path string, value http.Handler) {
 	}
 }
 
-func (p *pathTrie) walk(n int) {
+func (p *pathTrie) walk(prefix string, n int) {
 	if p == nil {
 		fmt.Println(nil)
 		return
 	}
-	fmt.Printf("handler:%q,%d children.", p.value, len(p.children))
+	if p.value == nil {
+		// fmt.Print(nil)
+	} else {
+		fmt.Printf(" --> %#v", p.value)
+	}
 	if len(p.children) == 0 {
 		return
 	}
 	for k, v := range p.children {
-		fmt.Printf("\n" + strings.Repeat("\t", n))
-		fmt.Printf("%q->", k)
-		v.walk(n + 1)
+		if strings.HasPrefix(k, pathSeperator) {
+			k = trimPathParam(k)
+		}
+		sub := fmt.Sprintf("%s/%s", prefix, k)
+		if v.value != nil {
+			fmt.Printf("\n")
+			fmt.Print(sub)
+		}
+		v.walk(sub, n+1)
 	}
+}
+
+func trimPathParam(k string) string {
+	param := strings.TrimPrefix(k, pathSeperator)
+	return paramNote + param
+}
+
+func makePathParamKey(param string) string {
+	k := strings.TrimPrefix(param, paramNote)
+	return pathSeperator + k
 }
