@@ -42,10 +42,10 @@ func TestSuffix(t *testing.T) {
 	r.Get("/", handler.HealthCheck)
 	expect := `{"status":"available"}`
 	getReqHelper("/health", r, http.StatusOK, expect, t)
-	getReqHelper("/health/", r, http.StatusNotFound, "", t)
+	getReqHelper("/health/", r, http.StatusOK, expect, t)
 
 	getReqHelper("/abc/", r, http.StatusOK, expect, t)
-	getReqHelper("/abc", r, http.StatusNotFound, "", t)
+	getReqHelper("/abc", r, http.StatusOK, expect, t)
 
 	getReqHelper("/", r, http.StatusOK, expect, t)
 	getReqHelper("/a", r, http.StatusNotFound, "", t)

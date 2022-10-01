@@ -135,6 +135,6 @@ func TestGroup(t *testing.T) {
 
 	c := g.Group("/api/v1")
 	c.Get("/", handler.HealthCheck)
-	notOKPath("/api/v1")
+	okPath("/api/v1")
 	okPath("/api/v1/")
 }

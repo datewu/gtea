@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,7 +16,9 @@ const (
 const (
 	pathSeperator = "/"
 	paramNote     = ":"
-	endChildKey   = ":END" + pathSeperator + ":"
+	regKey        = paramNote + pathSeperator + "REG"
+	// end of level, no descendants/children anymore
+	endChildKey = regKey + "EOL"
 )
 
 func newPathTrie() *pathTrie {
@@ -35,37 +38,104 @@ type pathTrie struct {
 // ignore plain child(include regex child) on the same level
 func (p *pathTrie) get(path string) http.Handler {
 	path = strings.Trim(strings.TrimSpace(path), pathSeperator)
-	if path == "" {
-		return nil
+	if path == "" || p.children == nil {
+		return p.value
 	}
-	if p.children == nil {
-		return nil
-	}
-	ks := strings.Split(path, pathSeperator)
-	key := ks[0]
-	child, ok := p.children[key]
+	vs := strings.Split(path, pathSeperator)
+	value := vs[0]
+	child, ok := p.children[value]
 	if ok {
-		if len(ks) == 1 {
+		if len(vs) == 1 {
 			return child.value
 		}
-		return child.get(strings.Join(ks[1:], pathSeperator))
+		return child.get(strings.Join(vs[1:], pathSeperator))
+	}
+	regChild, ok := p.children[regKey]
+	if ok {
+		if len(vs) == 1 {
+			return setParamValue(regChild.value, value)
+		}
+		return setParamValue(regChild.get(strings.Join(vs[1:], pathSeperator)), value)
+	}
+	endChild, ok := p.children[endChildKey]
+	if ok {
+		return endChild.value
 	}
 	return nil
+}
+
+func insertCtxValue(v http.Handler, key pathRegs, value string) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		var state []string
+		vs := r.Context().Value(key)
+		if vs == nil {
+			state = []string{value}
+		} else {
+			data, ok := vs.([]string)
+			if !ok {
+				panic("should be []string in " + key)
+			}
+			tmp := make([]string, len(data)+1)
+			tmp[0] = value
+			for i, v := range data {
+				tmp[i+1] = v
+			}
+			state = tmp
+		}
+		ctx := context.WithValue(r.Context(), key, state)
+		r = r.WithContext(ctx)
+		v.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func addCtxValue(v http.Handler, key pathRegs, value string) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		var state []string
+		vs := r.Context().Value(key)
+		if vs == nil {
+			state = []string{value}
+		} else {
+			data, ok := vs.([]string)
+			if !ok {
+				panic("should be []string in " + key)
+			}
+			data = append(data, value)
+			state = data
+		}
+		ctx := context.WithValue(r.Context(), key, state)
+		r = r.WithContext(ctx)
+		v.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func setParamValue(v http.Handler, value string) http.Handler {
+	return addCtxValue(v, paramsCtxValue, value)
+}
+
+func addParamName(v http.Handler, name string) http.Handler {
+	return insertCtxValue(v, paramsCtxKey, name)
 }
 
 // suffix '/' will be trimed
 func (p *pathTrie) put(path string, value http.Handler) *pathTrie {
 	path = strings.Trim(strings.TrimSpace(path), pathSeperator)
 	if path == "" {
-		return nil
+		p.value = value
+		return p
 	}
 	if p.children == nil {
-		p.children = make(map[string]*pathTrie)
+		panic("no children, maybe on EOL no descendants")
+	}
+	ks := strings.Split(path, pathSeperator)
+	key := ks[0]
+	if strings.HasPrefix(key, paramNote) {
+		value = addParamName(value, key[1:])
+		key = regKey
 	}
 	node := newPathTrie()
 	node.value = value
-	ks := strings.Split(path, pathSeperator)
-	key := ks[0]
 	child, ok := p.children[key]
 	if ok {
 		if len(ks) == 1 {
@@ -86,49 +156,32 @@ func (p *pathTrie) put(path string, value http.Handler) *pathTrie {
 	return p.children[key].put(strings.Join(ks[1:], pathSeperator), value)
 }
 
-// putEnd stop the get the the endChildKey
-// call put then append a endChild to node
-// useful for http.Fileserver
+// putEnd end trie at that level
+// stop look up children pathTrie
+// useful for http.Fileserver wild path
 func (p *pathTrie) putEnd(path string, value http.Handler) {
 	node := p.put(path, value)
 	node.children[endChildKey] = &pathTrie{
-		value:    value,
-		children: make(map[string]*pathTrie),
+		value: value,
+		//	children: make(map[string]*pathTrie),
 	}
 }
 
 func (p *pathTrie) walk(prefix string, n int) {
 	if p == nil {
-		fmt.Println(nil)
 		return
 	}
-	if p.value == nil {
-		// fmt.Print(nil)
-	} else {
-		fmt.Printf(" --> %#v", p.value)
-	}
-	if len(p.children) == 0 {
+	if p.children == nil {
 		return
+	}
+	if p.value != nil {
+		fmt.Printf(" --> %#v\n", p.value)
 	}
 	for k, v := range p.children {
-		if strings.HasPrefix(k, pathSeperator) {
-			k = trimPathParam(k)
-		}
 		sub := fmt.Sprintf("%s/%s", prefix, k)
 		if v.value != nil {
-			fmt.Printf("\n")
 			fmt.Print(sub)
 		}
 		v.walk(sub, n+1)
 	}
-}
-
-func trimPathParam(k string) string {
-	param := strings.TrimPrefix(k, pathSeperator)
-	return paramNote + param
-}
-
-func makePathParamKey(param string) string {
-	k := strings.TrimPrefix(param, paramNote)
-	return pathSeperator + k
 }
