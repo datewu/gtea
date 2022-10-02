@@ -64,7 +64,11 @@ func TestTriewalk(t *testing.T) {
 	for k, v := range table {
 		p.put(k, v)
 	}
-	p.walk("  ", 1)
+	paths := p.walk()
+	if len(paths) != len(table) {
+		t.Errorf("expected %d got %d", len(table), len(paths))
+	}
+	p.printPaths()
 }
 
 func TestTriewalknormal(t *testing.T) {
@@ -87,5 +91,9 @@ func TestTriewalknormal(t *testing.T) {
 	for k, v := range table {
 		p.put(k, v)
 	}
-	p.walk("  ", 1)
+	paths := p.walk()
+	if len(paths) != len(table) {
+		t.Errorf("expected %d got %d", len(table), len(paths))
+	}
+	p.printPaths()
 }

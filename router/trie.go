@@ -166,22 +166,32 @@ func (p *pathTrie) putEnd(path string, value http.Handler) {
 		//	children: make(map[string]*pathTrie),
 	}
 }
+func (p *pathTrie) printPaths() {
+	paths := p.walk()
+	fmt.Println("total number of paths: ", len(paths), "detail:")
+	fmt.Println(strings.Join(paths, "\n"))
+}
 
-func (p *pathTrie) walk(prefix string, n int) {
+func (p *pathTrie) walk() []string {
 	if p == nil {
-		return
+		return nil
 	}
 	if p.children == nil {
-		return
+		return nil
 	}
-	if p.value != nil {
-		fmt.Printf(" --> %#v\n", p.value)
-	}
-	for k, v := range p.children {
-		sub := fmt.Sprintf("%s/%s", prefix, k)
-		if v.value != nil {
-			fmt.Print(sub)
+	var result []string
+	for line, child := range p.children {
+		if child.value != nil {
+			meat := fmt.Sprintf("%s --> %v", line, child.value)
+			result = append(result, meat)
 		}
-		v.walk(sub, n+1)
+		next := child.walk()
+		for _, v := range next {
+			result = append(result, line+pathSeperator+v)
+		}
+		if next == nil && child.value == nil {
+			result = append(result, line)
+		}
 	}
+	return result
 }

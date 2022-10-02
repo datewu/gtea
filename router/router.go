@@ -44,7 +44,7 @@ func NewRouter(c *Config) *Router {
 
 func (r *Router) Handle(method, path string, h http.Handler) {
 	if r.conf.Debug {
-		r.trie.walk("/", 1)
+		r.trie.printPaths()
 	}
 	r.trie.put(method+path, h)
 }
