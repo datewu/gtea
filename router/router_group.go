@@ -93,7 +93,12 @@ func (g *RoutesGroup) Delete(path string, handler http.HandlerFunc) {
 	g.HandleFunc(http.MethodDelete, path, handler)
 }
 
-// Static is a shortcut for NewHandler(http.MethodDelete, path, handler)
+// Static serve dir dest
 func (g *RoutesGroup) Static(path string, dst string) {
 	g.r.Static(path, dst)
+}
+
+// StaticGZIP serve dir dest with Gzip middleware
+func (g *RoutesGroup) StaticGZIP(path string, dst string) {
+	g.r.ServeFilesWithGzip(path, http.Dir(dst))
 }

@@ -63,6 +63,14 @@ func (r *Router) ServeFiles(path string, root http.Dir) {
 	r.trie.putEnd(http.MethodGet+path, h)
 }
 
+func (r *Router) ServeFilesWithGzip(path string, root http.Dir) {
+	fs := http.FileServer(root)
+	h := http.StripPrefix(path, fs)
+	path = strings.TrimSuffix(path, "/")
+	hf := handler.GzipMiddleware(h.ServeHTTP)
+	r.trie.putEnd(http.MethodGet+path, hf)
+}
+
 // Get is a shortcut for HandleFunc(http.MethodGet, path, handler)
 func (r *Router) Get(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodGet, path, handler)
@@ -88,7 +96,12 @@ func (r *Router) Delete(path string, handler http.HandlerFunc) {
 	r.HandleFunc(http.MethodDelete, path, handler)
 }
 
-// Static is a shortcut for HandleFunc(http.MethodDelete, path, handler)
+// Static serve dir dest
 func (r *Router) Static(path string, dst string) {
 	r.ServeFiles(path, http.Dir(dst))
+}
+
+// StaticGZIP serve dir dest with Gzip middleware
+func (r *Router) StaticGZIP(path string, dst string) {
+	r.ServeFilesWithGzip(path, http.Dir(dst))
 }
