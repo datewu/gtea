@@ -78,15 +78,15 @@ func GetToken(r *http.Request, name string) (string, error) {
 	return token, nil
 }
 
+// GetValue gets a value from the request context.
+func GetValue(r *http.Request, key interface{}) interface{} {
+	return r.Context().Value(key)
+}
+
 // SetValue sets a value on the returned request.
 func SetValue(r *http.Request, key, value interface{}) *http.Request {
 	ctx := context.WithValue(r.Context(), key, value)
 	return r.WithContext(ctx)
-}
-
-// GetValue gets a value from the request context.
-func GetValue(r *http.Request, key interface{}) interface{} {
-	return r.Context().Value(key)
 }
 
 // ReadQuery returns the string query value with a defaut value from the request
@@ -123,10 +123,12 @@ func ReadInt64Query(r *http.Request, key string, defaultValue int64) int64 {
 	return i
 }
 
-// ReadJSON reads the request body and unmarshal it to the given struct, max size is 8MB
-func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
-	const maxBodySize = 8 * 1_048_576 // 8MB for max readJSON body
-	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBodySize))
+// ReadJSON reads the request body and unmarshal it to the given struct, default max size is 8MB
+func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}, max int64) error {
+	if max == 0 {
+		max = 8 * 1_048_576 // 8MB for max readJSON body
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, max)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	err := dec.Decode(dst)
@@ -155,7 +157,7 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 
 			// an open issue at https://github.com/golang/go/issues/30715
 		case err.Error() == "http: request body too large":
-			return fmt.Errorf("body must not be larger than %d bytes", maxBodySize)
+			return fmt.Errorf("body must not be larger than %d bytes", max)
 
 		case errors.As(err, &invalidUnmarshalErr):
 			panic(err)

@@ -5,6 +5,11 @@ import (
 	"net/http"
 )
 
+func errResponse(w http.ResponseWriter, code int, msg interface{}) {
+	data := Envelope{"error": msg}
+	WriteJSON(w, code, data, nil)
+}
+
 // Envelope is a JSON envelope for better client response
 type Envelope map[string]interface{}
 

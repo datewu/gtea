@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"expvar"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
@@ -113,14 +112,13 @@ func RateLimitMiddleware(rps float64, brust int) Middleware {
 		go delOld(time.Minute)
 
 		ratelimit := func(w http.ResponseWriter, r *http.Request) {
-			h := NewHandleHelper(w, r)
 			if r.RemoteAddr == "" {
 				// for httptest.NewRecorder()
 				r.RemoteAddr = "httptest.client:35256"
 			}
 			ip, _, err := net.SplitHostPort(r.RemoteAddr)
 			if err != nil {
-				h.ServerErr(err)
+				ServerErr(w, err)
 				return
 			}
 			mu.Lock()
@@ -132,7 +130,7 @@ func RateLimitMiddleware(rps float64, brust int) Middleware {
 			clients[ip].lastSeen = time.Now()
 			if !clients[ip].limiter.Allow() {
 				mu.Unlock()
-				h.RateLimitExceede()
+				RateLimitExceede(w)
 				return
 			}
 			mu.Unlock()
@@ -185,23 +183,22 @@ func CORSMiddleware(trustedOrigins []string) Middleware {
 func TokenMiddleware(check func(string) (bool, error)) Middleware {
 	mid := func(next http.HandlerFunc) http.HandlerFunc {
 		checkToken := func(w http.ResponseWriter, r *http.Request) {
-			h := NewHandleHelper(w, r)
 			token, err := GetToken(r, "token")
 			if err != nil {
 				if err == ErrNoToken {
-					h.AuthenticationRequire()
+					AuthenticationRequire(w)
 					return
 				}
-				h.InvalidCredentials()
+				InvalidCredentials(w)
 				return
 			}
 			ok, err := check(token)
 			if err != nil {
-				h.ServerErr(err)
+				ServerErr(w, err)
 				return
 			}
 			if !ok {
-				h.NotPermitted()
+				NotPermitted(w)
 				return
 			}
 			next(w, r)
@@ -213,7 +210,7 @@ func TokenMiddleware(check func(string) (bool, error)) Middleware {
 
 var gzPool = sync.Pool{
 	New: func() interface{} {
-		w := gzip.NewWriter(ioutil.Discard)
+		w := gzip.NewWriter(io.Discard)
 		gzip.NewWriterLevel(w, gzip.BestCompression)
 		return w
 	},
