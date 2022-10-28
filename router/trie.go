@@ -166,10 +166,12 @@ func (p *pathTrie) putEnd(path string, value http.Handler) {
 		//	children: make(map[string]*pathTrie),
 	}
 }
+
 func (p *pathTrie) printPaths() {
 	paths := p.walk()
-	fmt.Println("total number of paths: ", len(paths), "detail:")
+	fmt.Printf("total %d paths: \nDetail:\n", len(paths))
 	fmt.Println(strings.Join(paths, "\n"))
+	fmt.Println("=======")
 }
 
 func (p *pathTrie) walk() []string {
