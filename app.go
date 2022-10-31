@@ -21,6 +21,8 @@ type App struct {
 	Logger         *jsonlog.Logger
 	shutdownStream chan error
 	exitFns        []func()
+	chansLock      *sync.Mutex
+	bgChans        map[string]chan string
 }
 
 // NewApp creates a new application object.
@@ -38,6 +40,8 @@ func NewApp(ctx context.Context, cfg *Config) *App {
 		ctx:            ctx,
 		config:         cfg,
 		shutdownStream: make(chan error),
+		chansLock:      &sync.Mutex{},
+		bgChans:        make(map[string]chan string),
 		Logger:         logger,
 	}
 	return app

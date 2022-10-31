@@ -60,6 +60,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	app.Logger.Info("stopped server", map[string]string{
 		"addr": srv.Addr,
 	})
+	app.shutdown()
 	return nil
 }
 
@@ -78,8 +79,8 @@ func (a *App) GetMetaData(key string) string {
 	return ""
 }
 
-// Background start bg job
-func (app *App) Background(fn func()) {
+// AddBGJob start a background job, goroutine safe
+func (app *App) AddBGJob(name string, fn func(chan string)) {
 	rcv := func() {
 		if r := recover(); r != nil {
 			app.Logger.Err(fmt.Errorf("%s", r), nil)
@@ -89,18 +90,38 @@ func (app *App) Background(fn func()) {
 	go func() {
 		defer app.wg.Done()
 		defer rcv()
-		fn()
+		app.chansLock.Lock()
+		c, ok := app.bgChans[name]
+		if !ok {
+			c = make(chan string)
+			app.bgChans[name] = c
+		}
+		app.chansLock.Unlock()
+		fn(c)
 	}()
 }
 
-// AddExitFn add defer func in app.shutdown
-// you may add db.close, redis.close, etc
+// GetBGChan get backgroud job feedback chan, goroutine safe
+func (app *App) GetBGChan(name string) chan string {
+	app.chansLock.Lock()
+	defer app.chansLock.Unlock()
+	return app.bgChans[name]
+}
+
+// RemoveBGChan remove job feedback chan, goroutine safe
+func (app *App) RemoveBGChan(name string) {
+	app.chansLock.Lock()
+	defer app.chansLock.Unlock()
+	delete(app.bgChans, name)
+}
+
+// AddExitFn add defer func in app.shutdown you may add db.close, redis.close, etc
+// not goroutine safe
 func (app *App) AddExitFn(fn func()) {
 	app.exitFns = append(app.exitFns, fn)
 }
 
-// Shutdown shutdown app
-func (app *App) Shutdown() {
+func (app *App) shutdown() {
 	for _, fn := range app.exitFns {
 		fn()
 	}
