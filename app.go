@@ -17,12 +17,13 @@ type contextKey string
 type App struct {
 	ctx            context.Context
 	config         *Config
-	wg             sync.WaitGroup
 	Logger         *jsonlog.Logger
 	shutdownStream chan error
-	exitFns        []func()
+	daemonWG       sync.WaitGroup
+	daemonFns      []func()
 	chansLock      *sync.Mutex
-	bgChans        map[string]chan string
+	bgWG           sync.WaitGroup
+	bgChans        map[string]chan Message
 }
 
 // NewApp creates a new application object.
@@ -41,7 +42,7 @@ func NewApp(ctx context.Context, cfg *Config) *App {
 		config:         cfg,
 		shutdownStream: make(chan error),
 		chansLock:      &sync.Mutex{},
-		bgChans:        make(map[string]chan string),
+		bgChans:        make(map[string]chan Message),
 		Logger:         logger,
 	}
 	return app
@@ -69,4 +70,19 @@ func DefaultConfig() *Config {
 		Metrics:  false,
 		LogLevel: jsonlog.LevelInfo,
 	}
+}
+
+// AddMetaData adds meta data to the application by key.
+func (a *App) AddMetaData(key string, value string) {
+	ctx := context.WithValue(a.ctx, contextKey(key), value)
+	a.ctx = ctx
+}
+
+// GetMetaData returns the meta data of the application by key.
+func (a *App) GetMetaData(key string) string {
+	v := a.ctx.Value(contextKey(key))
+	if str, ok := v.(string); ok {
+		return str
+	}
+	return ""
 }
