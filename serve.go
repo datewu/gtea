@@ -60,7 +60,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	app.Logger.Info("stopped server", map[string]string{
 		"addr": srv.Addr,
 	})
-	app.shutdown()
+	app.Shutdown()
 	return nil
 }
 
@@ -121,7 +121,8 @@ func (app *App) AddExitFn(fn func()) {
 	app.exitFns = append(app.exitFns, fn)
 }
 
-func (app *App) shutdown() {
+// Shutdown ..
+func (app *App) Shutdown() {
 	for _, fn := range app.exitFns {
 		fn()
 	}

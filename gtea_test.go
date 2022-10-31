@@ -50,5 +50,5 @@ func TestIntegrate(t *testing.T) {
 	go fn("/api/v1")
 	go fn("/api/v1")
 	time.Sleep(2 * time.Second)
-	app.shutdown()
+	app.Shutdown()
 }
