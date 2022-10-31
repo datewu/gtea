@@ -15,11 +15,12 @@ type contextKey string
 
 // App is the main application object.
 type App struct {
-	ctx     context.Context
-	config  *Config
-	wg      sync.WaitGroup
-	Logger  *jsonlog.Logger
-	exitFns []func()
+	ctx            context.Context
+	config         *Config
+	wg             sync.WaitGroup
+	Logger         *jsonlog.Logger
+	shutdownStream chan error
+	exitFns        []func()
 }
 
 // NewApp creates a new application object.
@@ -34,9 +35,10 @@ func NewApp(ctx context.Context, cfg *Config) *App {
 		}))
 	}
 	app := &App{
-		ctx:    ctx,
-		config: cfg,
-		Logger: logger,
+		ctx:            ctx,
+		config:         cfg,
+		shutdownStream: make(chan error),
+		Logger:         logger,
 	}
 	return app
 }

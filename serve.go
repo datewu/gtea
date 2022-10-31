@@ -12,6 +12,26 @@ import (
 	"time"
 )
 
+func handleOSsignal(ctx context.Context, app *App, srv *http.Server) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	s := <-quit
+	app.Logger.Info("caught signal", map[string]string{
+		"signal": s.String(),
+	})
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	err := srv.Shutdown(ctx)
+	if err != nil {
+		app.shutdownStream <- err
+	}
+	app.Logger.Info("completing background tasks", nil)
+	app.wg.Wait()
+	app.shutdownStream <- nil
+	close(app.shutdownStream)
+}
+
 // Serve start http server
 func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	srv := &http.Server{
@@ -23,26 +43,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	srv.ReadTimeout = 10 * time.Second
 	srv.WriteTimeout = 30 * time.Second
 
-	shutdownErr := make(chan error)
-	bgSignal := func() {
-		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-		s := <-quit
-		app.Logger.Info("caught signal", map[string]string{
-			"signal": s.String(),
-		})
-
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-		err := srv.Shutdown(ctx)
-		if err != nil {
-			shutdownErr <- err
-		}
-		app.Logger.Info("completing background tasks", nil)
-		app.wg.Wait()
-		shutdownErr <- nil
-	}
-	go bgSignal()
+	go handleOSsignal(ctx, app, srv)
 	app.Logger.Info("starting server", map[string]string{
 		"env":  app.config.Env,
 		"addr": srv.Addr,
@@ -52,7 +53,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
-	err = <-shutdownErr
+	err = <-app.shutdownStream
 	if err != nil {
 		return err
 	}
