@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -14,20 +16,44 @@ import (
 // ErrNoToken is returned when a token is not found in the request
 var ErrNoToken = errors.New("no token")
 
-// SaveFormFile write file to a io.Writer.
-func SaveFormFile(r *http.Request, name string, dst io.Writer) error {
+func parseFormfile(r *http.Request, name string) (string, io.ReadCloser, error) {
 	const maxMemory = 32 << 20 // 32 MB
 	if r.MultipartForm == nil {
 		if err := r.ParseMultipartForm(maxMemory); err != nil {
-			return err
+			return "", nil, err
 		}
 	}
 	f, fh, err := r.FormFile(name)
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 	defer f.Close()
 	src, err := fh.Open()
+	if err != nil {
+		return "", nil, err
+	}
+	return fh.Filename, src, nil
+
+}
+
+// SaveFormFile write file to a dir with upload filename.
+func SaveFormFile(r *http.Request, name, dir string) error {
+	fn, src, err := parseFormfile(r, name)
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	dst, err := os.Open(filepath.Join(dir, fn))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(dst, src)
+	return err
+}
+
+// WriteFormFile write file to a io.Writer.
+func WriteFormFile(r *http.Request, name string, dst io.Writer) error {
+	_, src, err := parseFormfile(r, name)
 	if err != nil {
 		return err
 	}
