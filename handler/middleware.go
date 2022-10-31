@@ -13,7 +13,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// Middleware is a function that takes a http.HandlerFunc and returns a http.HandlerFunc.
+// Middleware takes a http.HandlerFunc and returns a http.HandlerFunc.
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 // VoidHandlerFunc ...
@@ -30,8 +30,7 @@ var AbortMiddleware = Middleware(func(next http.HandlerFunc) http.HandlerFunc {
 	return VoidHandlerFunc
 })
 
-// AggregateMds aggrate middleware to one
-// lower index ms[i] more outer middleware
+// AggregateMds aggrate middlewares.
 func AggregateMds(ms []Middleware) Middleware {
 	size := len(ms)
 	if size == 0 {
@@ -110,7 +109,6 @@ func RateLimitMiddleware(rps float64, brust int) Middleware {
 			}
 		}
 		go delOld(time.Minute)
-
 		ratelimit := func(w http.ResponseWriter, r *http.Request) {
 			if r.RemoteAddr == "" {
 				// for httptest.NewRecorder()
@@ -141,6 +139,7 @@ func RateLimitMiddleware(rps float64, brust int) Middleware {
 	return mid
 }
 
+// CORSMiddleware unblock trustedOrigins domains
 func CORSMiddleware(trustedOrigins []string) Middleware {
 	mid := func(next http.HandlerFunc) http.HandlerFunc {
 		cors := func(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +179,7 @@ func CORSMiddleware(trustedOrigins []string) Middleware {
 	return mid
 }
 
+// TokenMiddleware GetToken then use check token
 func TokenMiddleware(check func(string) (bool, error)) Middleware {
 	mid := func(next http.HandlerFunc) http.HandlerFunc {
 		checkToken := func(w http.ResponseWriter, r *http.Request) {

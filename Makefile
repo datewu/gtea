@@ -64,7 +64,7 @@ vendor:
 ## build/lib: build the package
 .PHONY: build/lib
 build/lib: audit
-	@echo 'Building cmd/...'
+	@echo 'Building ...'
 	go build 
 
 ## build/dlv-debug: build the application with dlv gcflags

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 )
 
-// Event is a single event in an SSE stream.
-// use json marshal data
+// Event a single event in SSE stream.
+// using json marshal encoding
 type Event struct {
 	id, name *string
 	data     any

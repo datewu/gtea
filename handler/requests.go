@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -16,37 +14,25 @@ import (
 // ErrNoToken is returned when a token is not found in the request
 var ErrNoToken = errors.New("no token")
 
-// FormFile returns the first file for the provided form key.
-func FormFile(r *http.Request, name string) (*multipart.FileHeader, error) {
+// SaveFormFile write file to a io.Writer.
+func SaveFormFile(r *http.Request, name string, dst io.Writer) error {
 	const maxMemory = 32 << 20 // 32 MB
 	if r.MultipartForm == nil {
 		if err := r.ParseMultipartForm(maxMemory); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	f, fh, err := r.FormFile(name)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	f.Close()
-	return fh, err
-}
-
-// SaveUploadedFile uploads the form file to specific dst.
-func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
-	src, err := file.Open()
+	defer f.Close()
+	src, err := fh.Open()
 	if err != nil {
 		return err
 	}
 	defer src.Close()
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, src)
+	_, err = io.Copy(dst, src)
 	return err
 }
 
@@ -123,13 +109,28 @@ func ReadInt64Query(r *http.Request, key string, defaultValue int64) int64 {
 	return i
 }
 
-// ReadJSON reads the request body and unmarshal it to the given struct, default max size is 8MB
-func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}, max int64) error {
+// ReadJSON reads the request body up to the max size and unmarshal it to the given struct
+func ReadMaxJSON(w http.ResponseWriter, r *http.Request, dst interface{}, max int64) error {
 	if max == 0 {
 		max = 8 * 1_048_576 // 8MB for max readJSON body
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, max)
-	dec := json.NewDecoder(r.Body)
+	err := decodeJSON(r.Body, dst)
+	if err != nil {
+		if err.Error() == "http: request body too large" {
+			return fmt.Errorf("body must not be larger than %d bytes", max)
+		}
+	}
+	return nil
+}
+
+// ReadJSON reads the request body and unmarshal it to the given struct
+func ReadJSON(r *http.Request, dst interface{}) error {
+	return decodeJSON(r.Body, dst)
+}
+
+func decodeJSON(r io.Reader, dst interface{}) error {
+	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	err := dec.Decode(dst)
 	if err != nil {
@@ -154,10 +155,6 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}, max int64
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 			return fmt.Errorf("body contains unknown key %s", fieldName)
-
-			// an open issue at https://github.com/golang/go/issues/30715
-		case err.Error() == "http: request body too large":
-			return fmt.Errorf("body must not be larger than %d bytes", max)
 
 		case errors.As(err, &invalidUnmarshalErr):
 			panic(err)

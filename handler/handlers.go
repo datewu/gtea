@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// HealthCheckHandler is a handler for health check
+// HealthCheckHandler a simple health check
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	data := Envelope{
 		"status": "available",
@@ -13,12 +13,13 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, data, nil)
 }
 
-// MethodNotAllowed is a handler for method not found
+// MethodNotAllowed method not found handler
 var MethodNotAllowed http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf("the %s mehtod is not supported for this resource", r.Method)
 	errResponse(w, http.StatusMethodNotAllowed, msg)
 }
 
+// NotFoundMsg method not found with custom message
 func NotFoundMsg(msg string) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, _ *http.Request) {
 		errResponse(w, http.StatusNotFound, msg)
