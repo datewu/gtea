@@ -21,9 +21,9 @@ type App struct {
 	shutdownStream chan error
 	clearWG        sync.WaitGroup
 	clearFns       []func()
-	chansLock      *sync.Mutex
+	bgLock         *sync.Mutex
 	bgWG           sync.WaitGroup
-	bgChans        map[string]chan Message
+	bgJobs         map[string]*JobParam
 }
 
 // NewApp creates a new application object.
@@ -41,8 +41,8 @@ func NewApp(ctx context.Context, cfg *Config) *App {
 		ctx:            ctx,
 		config:         cfg,
 		shutdownStream: make(chan error),
-		chansLock:      &sync.Mutex{},
-		bgChans:        make(map[string]chan Message),
+		bgLock:         &sync.Mutex{},
+		bgJobs:         make(map[string]*JobParam),
 		Logger:         logger,
 	}
 	return app

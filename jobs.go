@@ -1,6 +1,7 @@
 package gtea
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -8,6 +9,11 @@ import (
 type Message struct {
 	Payload interface{}
 	Err     error
+}
+
+type JobParam struct {
+	Chan   chan Message
+	Cancle context.CancelFunc
 }
 
 // AddClearFn add defer func in app.shutdown you may add db.close, redis.close, etc
@@ -22,7 +28,12 @@ func (app *App) AddClearFn(fn func()) {
 }
 
 // AddBGJob start a background job, goroutine safe
-func (app *App) AddBGJob(name string, fn func(chan<- Message)) {
+func (app *App) AddBGJob(name string, fn func(context.Context, chan<- Message)) error {
+	app.bgLock.Lock()
+	if _, ok := app.bgJobs[name]; ok {
+		app.bgLock.Unlock()
+		return fmt.Errorf("cannot overrider job %s", name)
+	}
 	rcv := func() {
 		if r := recover(); r != nil {
 			app.Logger.Err(fmt.Errorf("job %s, recoveed %s", name, r), nil)
@@ -32,29 +43,36 @@ func (app *App) AddBGJob(name string, fn func(chan<- Message)) {
 	go func() {
 		defer app.bgWG.Done()
 		defer rcv()
-		app.chansLock.Lock()
-		c, ok := app.bgChans[name]
-		if !ok {
-			c = make(chan Message)
-			app.bgChans[name] = c
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		param := &JobParam{
+			Chan:   make(chan Message),
+			Cancle: cancel,
 		}
-		app.chansLock.Unlock()
-		fn(c)
+		app.bgLock.Lock()
+		app.bgJobs[name] = param
+		app.bgLock.Unlock()
+		fn(ctx, param.Chan)
 	}()
+	return nil
 }
 
 // GetBGChan get backgroud job receive only feedback chan
 // goroutine safe
 func (app *App) GetBGChan(name string) <-chan Message {
-	app.chansLock.Lock()
-	defer app.chansLock.Unlock()
-	return app.bgChans[name]
+	app.bgLock.Lock()
+	job := app.bgJobs[name]
+	app.bgLock.Unlock()
+	if job == nil {
+		return nil
+	}
+	return job.Chan
 }
 
 // RemoveBGChan remove job feedback chan
 // goroutine safe
 func (app *App) RemoveBGChan(name string) {
-	app.chansLock.Lock()
-	defer app.chansLock.Unlock()
-	delete(app.bgChans, name)
+	app.bgLock.Lock()
+	defer app.bgLock.Unlock()
+	delete(app.bgJobs, name)
 }
