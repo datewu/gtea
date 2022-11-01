@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/datewu/gtea/handler"
 )
 
-type pathRegs string
-
-const (
-	paramsCtxKey   pathRegs = "path_param_names"
-	paramsCtxValue pathRegs = "path_param_values"
-)
 const (
 	pathSeperator = "/"
 	paramNote     = ":"
@@ -64,7 +60,7 @@ func (p *pathTrie) get(path string) http.Handler {
 	return nil
 }
 
-func insertCtxValue(v http.Handler, key pathRegs, value string) http.Handler {
+func insertCtxValue(v http.Handler, key handler.PathRegs, value string) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var state []string
 		vs := r.Context().Value(key)
@@ -89,7 +85,7 @@ func insertCtxValue(v http.Handler, key pathRegs, value string) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func addCtxValue(v http.Handler, key pathRegs, value string) http.Handler {
+func addCtxValue(v http.Handler, key handler.PathRegs, value string) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var state []string
 		vs := r.Context().Value(key)
@@ -111,11 +107,11 @@ func addCtxValue(v http.Handler, key pathRegs, value string) http.Handler {
 }
 
 func setParamValue(v http.Handler, value string) http.Handler {
-	return addCtxValue(v, paramsCtxValue, value)
+	return addCtxValue(v, handler.ParamsCtxValue, value)
 }
 
 func addParamName(v http.Handler, name string) http.Handler {
-	return insertCtxValue(v, paramsCtxKey, name)
+	return insertCtxValue(v, handler.ParamsCtxKey, name)
 }
 
 // suffix '/' will be trimed

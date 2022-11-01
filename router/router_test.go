@@ -74,21 +74,21 @@ func TestPathParams(t *testing.T) {
 	ro := NewRouter(conf)
 	nameHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
-			"name": ReadPath(r, "name"),
+			"name": handler.ReadPathParam(r, "name"),
 		}
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}
 	nameCityHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
-			"name": ReadPath(r, "name"),
-			"city": ReadPath(r, "city"),
+			"name": handler.ReadPathParam(r, "name"),
+			"city": handler.ReadPathParam(r, "city"),
 		}
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}
 	locationHandle := func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]string{
-			"country": ReadPath(r, "country"),
-			"city":    ReadPath(r, "city"),
+			"country": handler.ReadPathParam(r, "country"),
+			"city":    handler.ReadPathParam(r, "city"),
 		}
 		handler.WriteJSON(w, http.StatusOK, data, nil)
 	}

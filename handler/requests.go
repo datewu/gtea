@@ -105,6 +105,50 @@ func SetValue(r *http.Request, key, value interface{}) *http.Request {
 	return r.WithContext(ctx)
 }
 
+// PathRegs for ctx key
+type PathRegs string
+
+const (
+	ParamsCtxKey   PathRegs = "path_param_names"
+	ParamsCtxValue PathRegs = "path_param_values"
+)
+
+// ReadPathParam returns the string param value in the request path
+func ReadPathParam(r *http.Request, name string) string {
+	keys := r.Context().Value(ParamsCtxKey)
+	ks, ok := keys.([]string)
+	if !ok {
+		return ""
+	}
+	values := r.Context().Value(ParamsCtxValue)
+	vs, ok := values.([]string)
+	if !ok {
+		return ""
+	}
+	if len(ks) != len(vs) {
+		return ""
+	}
+	for i, v := range ks {
+		if v == name {
+			return vs[i]
+		}
+	}
+	return ""
+}
+
+// ReadInt64PathParam returns the int64 param value in the request path
+func ReadInt64PathParam(r *http.Request, name string) (int64, error) {
+	v := ReadPathParam(r, name)
+	if v == "" {
+		return 0, errors.New("empty param")
+	}
+	id, err := strconv.ParseInt(v, 10, 64)
+	if err != nil || id < 1 {
+		return 0, errors.New("invalid id parameter")
+	}
+	return id, nil
+}
+
 // ReadQuery returns the string query value with a defaut value from the request
 func ReadQuery(r *http.Request, key string, defaultValue string) string {
 	qs := r.URL.Query()
