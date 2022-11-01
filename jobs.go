@@ -22,7 +22,7 @@ func (app *App) AddClearFn(fn func()) {
 }
 
 // AddBGJob start a background job, goroutine safe
-func (app *App) AddBGJob(name string, fn func(chan Message)) {
+func (app *App) AddBGJob(name string, fn func(chan<- Message)) {
 	rcv := func() {
 		if r := recover(); r != nil {
 			app.Logger.Err(fmt.Errorf("job %s, recoveed %s", name, r), nil)
