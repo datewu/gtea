@@ -57,6 +57,14 @@ func (app *App) AddBGJob(name string, fn func(context.Context, chan<- Message)) 
 	return nil
 }
 
+// GetBGJobParam get backgroud job param
+// goroutine safe
+func (app *App) GetBGJobParam(name string) *JobParam {
+	app.bgLock.Lock()
+	defer app.bgLock.Unlock()
+	return app.bgJobs[name]
+}
+
 // GetBGChan get backgroud job receive only feedback chan
 // goroutine safe
 func (app *App) GetBGChan(name string) <-chan Message {
