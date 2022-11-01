@@ -19,8 +19,8 @@ type App struct {
 	config         *Config
 	Logger         *jsonlog.Logger
 	shutdownStream chan error
-	daemonWG       sync.WaitGroup
-	daemonFns      []func()
+	clearWG        sync.WaitGroup
+	clearFns       []func()
 	chansLock      *sync.Mutex
 	bgWG           sync.WaitGroup
 	bgChans        map[string]chan Message

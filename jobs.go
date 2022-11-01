@@ -10,11 +10,15 @@ type Message struct {
 	Err     error
 }
 
-// AddDaemonFn add defer func in app.shutdown you may add db.close, redis.close, etc
+// AddClearFn add defer func in app.shutdown you may add db.close, redis.close, etc
 // not goroutine safe
-func (app *App) AddDaemonFn(fn func()) {
-	app.daemonWG.Add(1)
-	app.daemonFns = append(app.daemonFns, fn)
+func (app *App) AddClearFn(fn func()) {
+	app.clearWG.Add(1)
+	f := func() {
+		fn()
+		app.clearWG.Done()
+	}
+	app.clearFns = append(app.clearFns, f)
 }
 
 // AddBGJob start a background job, goroutine safe

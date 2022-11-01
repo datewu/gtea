@@ -44,16 +44,13 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	return nil
 }
 
-// Shutdown call exiteFns one by one
+// Shutdown call clearFns one by one
 func (app *App) Shutdown() {
-	for _, fn := range app.daemonFns {
+	for _, fn := range app.clearFns {
 		go fn()
-		go app.daemonWG.Done()
 	}
-	if app.daemonFns != nil {
-		app.daemonWG.Wait()
-		app.daemonFns = nil
-	}
+	app.clearWG.Wait()
+	app.clearFns = nil
 }
 
 func handleOSsignal(ctx context.Context, app *App, srv *http.Server) {
