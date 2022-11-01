@@ -37,18 +37,22 @@ func parseFormfile(r *http.Request, name string) (string, io.ReadCloser, error) 
 }
 
 // SaveFormFile write file to a dir with upload filename.
-func SaveFormFile(r *http.Request, name, dir string) error {
+func SaveFormFile(r *http.Request, name, dir string) (string, error) {
 	fn, src, err := parseFormfile(r, name)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer src.Close()
-	dst, err := os.Open(filepath.Join(dir, fn))
+	fullPath := filepath.Join(dir, fn)
+	dst, err := os.Open(fullPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = io.Copy(dst, src)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return fullPath, nil
 }
 
 // WriteFormFile write file to a io.Writer.
