@@ -8,7 +8,7 @@ import (
 // NewHandler returns a HandlerFunc that writes/loop the event to the ResponseWriter.
 func NewHandler(h Downstream) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		hanlder(w, r, h)
+		Handle(w, r, h)
 	}
 }
 
@@ -17,10 +17,11 @@ type Downstream func(http.ResponseWriter, http.Flusher)
 
 // Demo time tick SSE
 func Demo(w http.ResponseWriter, r *http.Request) {
-	hanlder(w, r, demoLoop)
+	Handle(w, r, demoLoop)
 }
 
-func hanlder(w http.ResponseWriter, r *http.Request, h Downstream) {
+// Handle downstream
+func Handle(w http.ResponseWriter, r *http.Request, h Downstream) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -35,6 +36,13 @@ func hanlder(w http.ResponseWriter, r *http.Request, h Downstream) {
 		return
 	}
 	h(w, f)
+}
+
+// Shutdown send shutdown event
+func Shutdown(w http.ResponseWriter, f http.Flusher) {
+	shutMsg := NewEvent("shutdown", "bye")
+	w.Write(shutMsg.Bytes())
+	f.Flush()
 }
 
 func demoLoop(w http.ResponseWriter, f http.Flusher) {
@@ -54,7 +62,5 @@ func demoLoop(w http.ResponseWriter, f http.Flusher) {
 		f.Flush()
 		<-timer.C
 	}
-	shutMsg := NewEvent("shutdown", "bye")
-	w.Write(shutMsg.Bytes())
-	f.Flush()
+	Shutdown(w, f)
 }
