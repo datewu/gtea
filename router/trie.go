@@ -165,9 +165,16 @@ func (p *pathTrie) putEnd(path string, value http.Handler) {
 
 func (p *pathTrie) printPaths() {
 	paths := p.walk()
-	fmt.Printf("total %d paths: \nDetail:\n", len(paths))
-	fmt.Println(strings.Join(paths, "\n"))
-	fmt.Println("=======")
+	fmt.Printf("total %d paths. \tDetail:\n", len(paths))
+	for _, p := range paths {
+		if !strings.Contains(p, pathSeperator) {
+			continue
+		}
+		ps := strings.Split(p, pathSeperator)
+		fmt.Printf("%6s %s", ps[0], pathSeperator)
+		fmt.Println(strings.Join(ps[1:], pathSeperator))
+	}
+	fmt.Println()
 }
 
 func (p *pathTrie) walk() []string {

@@ -44,7 +44,7 @@ func SaveFormFile(r *http.Request, name, dir string) (string, error) {
 	}
 	defer src.Close()
 	fullPath := filepath.Join(dir, fn)
-	dst, err := os.Open(fullPath)
+	dst, err := os.Create(fullPath)
 	if err != nil {
 		return "", err
 	}
