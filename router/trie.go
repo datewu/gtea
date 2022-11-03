@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/datewu/gtea/handler"
@@ -165,16 +166,25 @@ func (p *pathTrie) putEnd(path string, value http.Handler) {
 
 func (p *pathTrie) printPaths() {
 	paths := p.walk()
-	fmt.Printf("total %d paths. \tDetail:\n", len(paths))
+	fmt.Println()
+	fmt.Println("registied paths:")
+	sortPaths := make(map[string]string)
+	keys := []string{}
 	for _, p := range paths {
 		if !strings.Contains(p, pathSeperator) {
 			continue
 		}
 		ps := strings.Split(p, pathSeperator)
-		fmt.Printf("%6s %s", ps[0], pathSeperator)
-		fmt.Println(strings.Join(ps[1:], pathSeperator))
+		key := strings.Join(ps[1:], pathSeperator)
+		sortPaths[key] = fmt.Sprintf("%6s %s%s", ps[0], pathSeperator, key)
+		keys = append(keys, key)
 	}
-	fmt.Println()
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Println(sortPaths[k])
+	}
+	fmt.Printf("valid %d paths. \ttotal tries: %d\n\n",
+		len(keys), len(paths))
 }
 
 func (p *pathTrie) walk() []string {
