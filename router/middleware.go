@@ -18,7 +18,7 @@ func (r *Router) corsMiddleware() handler.Middleware {
 func (r *Router) aggBuildInMiddlewares() {
 	ms := []handler.Middleware{}
 	// note the order is siginificant
-	// outer if executed first and the low index
+	// outer if executed first then low index
 	if r.conf.Limiter.Enabled {
 		ms = append(ms, r.rateLimitMiddleware())
 	}
@@ -29,6 +29,9 @@ func (r *Router) aggBuildInMiddlewares() {
 	if r.conf.Metrics {
 		r.Handle(http.MethodGet, "/debug/vars", expvar.Handler())
 		ms = append(ms, handler.MetricsMiddleware)
+	}
+	if r.aggMiddleware != nil {
+		ms = append(ms, r.aggMiddleware)
 	}
 	r.aggMiddleware = handler.AggregateMds(ms)
 }

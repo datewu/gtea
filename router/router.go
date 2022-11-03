@@ -9,49 +9,57 @@ import (
 
 // Router ..
 type Router struct {
-	conf                       *Config
-	trie                       *pathTrie
-	aggMiddleware              handler.Middleware
-	NotFound, MethodNotAllowed http.HandlerFunc
+	conf          *Config
+	trie          *pathTrie
+	aggMiddleware handler.Middleware
 }
 
-// ServeHTTP ...
-func (ro *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	last := func(iw http.ResponseWriter, ir *http.Request) {
-		tHandler := ro.trie.get(ir.Method + ir.URL.Path)
-		if tHandler != nil {
-			tHandler.ServeHTTP(iw, ir)
-			return
-		}
-		ro.NotFound(iw, ir)
+// Handler serveHTTP
+type Handler struct {
+	trie pathTrie
+	md   handler.Middleware
+}
+
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var hf http.HandlerFunc
+	tHandler := h.trie.get(r.Method + r.URL.Path)
+	if tHandler == nil {
+		hf = handler.NotFoundMsg("the requested resource could not be found")
+	} else {
+		hf = tHandler.ServeHTTP
 	}
-	if ro.aggMiddleware != nil {
-		ro.aggMiddleware(last)(w, r)
+	if h.md == nil {
+		hf(w, r)
 		return
 	}
-	last(w, r)
+	h.md(hf)(w, r)
+}
+
+func (ro *Router) Handler() Handler {
+	if ro.conf.Debug {
+		ro.trie.printPaths()
+	}
+	ro.aggBuildInMiddlewares()
+	h := Handler{
+		trie: *ro.trie,
+		md:   ro.aggMiddleware,
+	}
+	return h
 }
 
 func NewRouter(c *Config) *Router {
 	r := &Router{conf: c}
 	r.trie = newPathTrie()
-	r.NotFound = func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}
-	r.aggBuildInMiddlewares()
 	return r
 }
 
 func (r *Router) Handle(method, path string, h http.Handler) {
-	if r.conf.Debug {
-		r.trie.printPaths()
-	}
 	r.trie.put(method+path, h)
 }
 
 func (r *Router) HandleFunc(method, path string, hf http.HandlerFunc) {
 	if hf == nil {
-		panic("http: nil handler")
+		panic("http: nil http.handlerFunc")
 	}
 	r.Handle(method, path, hf)
 }

@@ -24,7 +24,7 @@ func main() {
 	r.Static("/", "../")
 	srv := &http.Server{
 		Addr:    ":8090",
-		Handler: r,
+		Handler: r.Handler(),
 	}
 	fmt.Println("start serve", srv.ListenAndServe())
 }

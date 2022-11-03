@@ -30,7 +30,8 @@ func getReqHelper(path string, h http.Handler, code int, expect string, t *testi
 func TestRouterHealhCheck(t *testing.T) {
 	conf := &Config{}
 	r := NewRouter(conf)
-	getReqHelper("/v1/healthcheck", r, http.StatusNotFound, "", t)
+	expect := `{"error":"the requested resource could not be found"}`
+	getReqHelper("/v1/healthcheck", r.Handler(), http.StatusNotFound, expect, t)
 }
 
 func TestSuffix(t *testing.T) {
@@ -41,14 +42,15 @@ func TestSuffix(t *testing.T) {
 	r.Get("/abc/", handler.HealthCheck)
 	r.Get("/", handler.HealthCheck)
 	expect := `{"status":"available"}`
-	getReqHelper("/health", r, http.StatusOK, expect, t)
-	getReqHelper("/health/", r, http.StatusOK, expect, t)
+	h := r.Handler()
+	getReqHelper("/health", h, http.StatusOK, expect, t)
+	getReqHelper("/health/", h, http.StatusOK, expect, t)
 
-	getReqHelper("/abc/", r, http.StatusOK, expect, t)
-	getReqHelper("/abc", r, http.StatusOK, expect, t)
+	getReqHelper("/abc/", h, http.StatusOK, expect, t)
+	getReqHelper("/abc", h, http.StatusOK, expect, t)
 
-	getReqHelper("/", r, http.StatusOK, expect, t)
-	getReqHelper("/a", r, http.StatusNotFound, "", t)
+	getReqHelper("/", h, http.StatusOK, expect, t)
+	getReqHelper("/a", h, http.StatusNotFound, `{"error":"the requested resource could not be found"}`, t)
 }
 func TestRequestMethods(t *testing.T) {
 	conf := &Config{}
@@ -58,9 +60,10 @@ func TestRequestMethods(t *testing.T) {
 	ro.Post("/ok", handler.HealthCheck)
 	ro.Put("/ok", handler.HealthCheck)
 	ro.Delete("/ok", handler.HealthCheck)
+	h := ro.Handler()
 	request := func(method string) {
 		expect := `{"status":"available"}`
-		reqTestHelper(method, "/ok", nil, ro,
+		reqTestHelper(method, "/ok", nil, h,
 			http.StatusOK, expect, t)
 	}
 	request(http.MethodGet)
@@ -95,17 +98,18 @@ func TestPathParams(t *testing.T) {
 	ro.Get("/hi/:name", nameHandle)
 	ro.Get("/hi/:name/:city", nameCityHandle)
 	ro.Get("/hi/:country/:city/good", locationHandle)
+	h := ro.Handler()
 	nameReq := func(name string) {
 		expect := fmt.Sprintf(`{"name":"%s"}`, name)
-		getReqHelper("/hi/"+name, ro, http.StatusOK, expect, t)
+		getReqHelper("/hi/"+name, h, http.StatusOK, expect, t)
 	}
 	nameCityReq := func(n, c string) {
 		expect := fmt.Sprintf(`{"city":"%s","name":"%s"}`, c, n)
-		getReqHelper("/hi/"+n+"/"+c, ro, http.StatusOK, expect, t)
+		getReqHelper("/hi/"+n+"/"+c, h, http.StatusOK, expect, t)
 	}
 	locationReq := func(c, city string) {
 		expect := fmt.Sprintf(`{"city":"%s","country":"%s"}`, city, c)
-		getReqHelper("/hi/"+c+"/"+city+"/good", ro, http.StatusOK, expect, t)
+		getReqHelper("/hi/"+c+"/"+city+"/good", h, http.StatusOK, expect, t)
 	}
 	nameReq("joe-boy")
 	nameCityReq("luffe", "dao-lol")
@@ -162,7 +166,7 @@ func TestNormalMiddler(t *testing.T) {
 	r.Get("/", handler.HealthCheck)
 
 	expect := msg + `{"status":"available"}`
-	getReqHelper("/", r, http.StatusOK, expect, t)
+	getReqHelper("/", r.Handler(), http.StatusOK, expect, t)
 }
 
 func TestAggNormalMiddler(t *testing.T) {
@@ -172,7 +176,7 @@ func TestAggNormalMiddler(t *testing.T) {
 	r.aggMiddleware = handler.AggregateMds(ms)
 	r.Get("/", handler.HealthCheck)
 	expect := msg + `{"status":"available"}`
-	getReqHelper("/", r, http.StatusOK, expect, t)
+	getReqHelper("/", r.Handler(), http.StatusOK, expect, t)
 }
 
 func TestAggNormalMiddlerWithAbort(t *testing.T) {
@@ -185,5 +189,5 @@ func TestAggNormalMiddlerWithAbort(t *testing.T) {
 	r.aggMiddleware = handler.AggregateMds(ms)
 	r.Get("/", handler.HealthCheck)
 	expect := msg
-	getReqHelper("/", r, http.StatusOK, expect, t)
+	getReqHelper("/", r.Handler(), http.StatusOK, expect, t)
 }

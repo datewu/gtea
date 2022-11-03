@@ -20,16 +20,14 @@ func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
 		return nil, errors.New("no router config provided")
 	}
 	r := NewRouter(conf)
-	r.NotFound = handler.NotFoundMsg(
-		"the requested resource could not be found")
-
 	// this "/v1/healthcheck" escape all routerGroup.aggMiddleware
 	r.HandleFunc(http.MethodGet, "/v1/healthcheck", handler.HealthCheck)
 	return &RoutesGroup{r: r}, nil
 }
 
-func (g *RoutesGroup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.r.ServeHTTP(w, r)
+// Handler return http.Handler
+func (g *RoutesGroup) Handler() Handler {
+	return g.r.Handler()
 }
 
 // Use add middleware to the group

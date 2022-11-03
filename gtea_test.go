@@ -26,7 +26,7 @@ func TestIntegrate(t *testing.T) {
 	h := router.DefaultRoutesGroup()
 	h.Get("/", handler.HealthCheck)
 	h.Get("/api/v1", handler.HealthCheck)
-	go app.Serve(ctx, h)
+	go app.Serve(ctx, h.Handler())
 	fn := func(path string) {
 		url := fmt.Sprintf("http://localhost:%d%s", port, path)
 		res, err := http.Get(url)

@@ -21,12 +21,13 @@ func TestUseMiddlerware(t *testing.T) {
 	_, ms, msg := newMiddlerwares(false)
 	g.Use(ms...)
 	g.Get("/abc", handler.HealthCheck)
+	h := g.Handler()
 	buildInHealthEscapeAggMiddles := func() {
-		defaultHealthcheckHelper(g, t)
+		defaultHealthcheckHelper(h, t)
 	}
 	othersApplyMiddlewares := func() {
 		expect := msg + `{"status":"available"}`
-		getReqHelper("/abc", g, http.StatusOK, expect, t)
+		getReqHelper("/abc", h, http.StatusOK, expect, t)
 	}
 	buildInHealthEscapeAggMiddles()
 	othersApplyMiddlewares()
@@ -44,11 +45,12 @@ func TestUseMiddlerwareWithAbort(t *testing.T) {
 	}
 	g.Use(ms...)
 	g.Get("/abc", handler.HealthCheck)
+	h := g.Handler()
 	buildInHealthEscapeAggMiddles := func() {
-		defaultHealthcheckHelper(g, t)
+		defaultHealthcheckHelper(h, t)
 	}
 	othersApplyMiddlewares := func() {
-		getReqHelper("/abc", g, http.StatusOK, msg, t)
+		getReqHelper("/abc", h, http.StatusOK, msg, t)
 	}
 	buildInHealthEscapeAggMiddles()
 	othersApplyMiddlewares()
@@ -63,12 +65,13 @@ func TestGrupWithMiddlerware(t *testing.T) {
 	_, ms, msg := newMiddlerwares(false)
 	hg := g.Group("/hello", ms...)
 	hg.Get("/abc", handler.HealthCheck)
+	h := hg.Handler()
 	buildInHealthEscapeAggMiddles := func() {
-		defaultHealthcheckHelper(hg, t)
+		defaultHealthcheckHelper(h, t)
 	}
 	othersApplyMiddlewares := func() {
 		expect := msg + `{"status":"available"}`
-		getReqHelper("/hello/abc", g, http.StatusOK, expect, t)
+		getReqHelper("/hello/abc", h, http.StatusOK, expect, t)
 	}
 	buildInHealthEscapeAggMiddles()
 	othersApplyMiddlewares()
@@ -80,7 +83,7 @@ func TestGroupHealhCheck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defaultHealthcheckHelper(g, t)
+	defaultHealthcheckHelper(g.Handler(), t)
 }
 
 func TestGroupRequestMethods(t *testing.T) {
@@ -93,9 +96,10 @@ func TestGroupRequestMethods(t *testing.T) {
 	g.Post("/ok", handler.HealthCheck)
 	g.Put("/ok", handler.HealthCheck)
 	g.Delete("/ok", handler.HealthCheck)
+	h := g.Handler()
 	expect := `{"status":"available"}`
 	request := func(method string) {
-		reqTestHelper(method, "/ok", nil, g,
+		reqTestHelper(method, "/ok", nil, h,
 			http.StatusOK, expect, t)
 	}
 	request(http.MethodGet)
@@ -119,16 +123,17 @@ func TestGroup(t *testing.T) {
 	b := g.Group("/b")
 	a.Get("/ok", handler.HealthCheck)
 	b.Get("/ok", handler.HealthCheck)
+	h := g.Handler()
 	okPath := func(path string) {
 		expect := `{"status":"available"}`
-		getReqHelper(path, g, http.StatusOK, expect, t)
+		getReqHelper(path, h, http.StatusOK, expect, t)
 	}
 	okPath("/a/ok")
 	okPath("/b/ok")
 
 	notOKPath := func(path string) {
 		expect := `{"error":"the requested resource could not be found"}`
-		getReqHelper(path, g, http.StatusNotFound, expect, t)
+		getReqHelper(path, h, http.StatusNotFound, expect, t)
 	}
 	notOKPath("/a/notok")
 	notOKPath("/c/ok")
