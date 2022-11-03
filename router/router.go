@@ -28,10 +28,6 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		hf = tHandler.ServeHTTP
 	}
-	if h.md == nil {
-		hf(w, r)
-		return
-	}
 	h.md(hf)(w, r)
 }
 
@@ -43,6 +39,9 @@ func (ro *Router) Handler() Handler {
 	h := Handler{
 		trie: *ro.trie,
 		md:   ro.aggMiddleware,
+	}
+	if h.md == nil {
+		h.md = handler.VoidMiddleware
 	}
 	return h
 }
