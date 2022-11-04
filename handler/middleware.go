@@ -57,7 +57,7 @@ func RecoverPanicMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				w.Header().Set("Connection", "close")
-				WriteJSON(w, http.StatusInternalServerError, Envelope{"recover": err}, nil)
+				ServerErrAny(w, err)
 				return
 			}
 		}()

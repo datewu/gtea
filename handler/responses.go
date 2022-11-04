@@ -82,11 +82,20 @@ func FailedValidation(w http.ResponseWriter, errs map[string]string) {
 	errResponse(w, http.StatusBadRequest, errs)
 }
 
-// ServerErr a general 500 response
+// ServerErr a general 500 response with an err
 func ServerErr(w http.ResponseWriter, err error) {
 	errs := map[string]interface{}{
 		"error":  "the server encountered a problem and could not process your request",
 		"detail": err.Error(),
+	}
+	errResponse(w, http.StatusInternalServerError, errs)
+}
+
+// ServerErrAny a general 500 response
+func ServerErrAny(w http.ResponseWriter, msg interface{}) {
+	errs := map[string]interface{}{
+		"error":  "the server encountered a problem and could not process your request",
+		"detail": msg,
 	}
 	errResponse(w, http.StatusInternalServerError, errs)
 }
