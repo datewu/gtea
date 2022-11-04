@@ -30,8 +30,9 @@ func (app *App) AddClearFn(fn func()) {
 // AddBGJob start a background job, goroutine safe
 func (app *App) AddBGJob(name string, fn func(context.Context, chan<- Message)) error {
 	app.bgLock.Lock()
-	if _, ok := app.bgJobs[name]; ok {
-		app.bgLock.Unlock()
+	_, ok := app.bgJobs[name]
+	app.bgLock.Unlock()
+	if ok {
 		return fmt.Errorf("cannot overrider job %s", name)
 	}
 	rcv := func() {
