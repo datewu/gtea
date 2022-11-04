@@ -20,6 +20,13 @@ func Demo(w http.ResponseWriter, r *http.Request) {
 	Handle(w, r, demoLoop)
 }
 
+// SendStringMsg sugar
+func SendStringMsg(w http.ResponseWriter, f http.Flusher, msg string) {
+	eMsg := NewMessage(msg)
+	w.Write(eMsg.Bytes())
+	f.Flush()
+}
+
 // Handle downstream
 func Handle(w http.ResponseWriter, r *http.Request, h Downstream) {
 	w.Header().Set("Content-Type", "text/event-stream")
