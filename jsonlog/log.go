@@ -7,6 +7,7 @@ func Debug(msg string, props map[string]string) {
 
 // Info defaultLogger.Info
 func Info(msg string, props map[string]string) {
+	defaultLogger.Info(msg, props)
 }
 
 // Err defaultLogger.Err

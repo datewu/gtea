@@ -27,6 +27,13 @@ func SendStringMsg(w http.ResponseWriter, f http.Flusher, msg string) {
 	f.Flush()
 }
 
+// SendAnyMsg sugar
+func SendAnyMsg(w http.ResponseWriter, f http.Flusher, msg interface{}) {
+	eMsg := NewMessage(msg)
+	w.Write(eMsg.Bytes())
+	f.Flush()
+}
+
 // Handle downstream
 func Handle(w http.ResponseWriter, r *http.Request, h Downstream) {
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -45,7 +52,7 @@ func Handle(w http.ResponseWriter, r *http.Request, h Downstream) {
 	h(w, f)
 }
 
-// Shutdown send shutdown event
+// Shutdown send shutdown event to client
 func Shutdown(w http.ResponseWriter, f http.Flusher) {
 	shutMsg := NewEvent("shutdown", "bye")
 	w.Write(shutMsg.Bytes())
@@ -65,8 +72,7 @@ func demoLoop(w http.ResponseWriter, f http.Flusher) {
 			ID:   i,
 			Time: time.Now(),
 		}
-		w.Write(NewMessage(jsonMsg).Bytes())
-		f.Flush()
+		SendAnyMsg(w, f, jsonMsg)
 		<-timer.C
 	}
 	Shutdown(w, f)
