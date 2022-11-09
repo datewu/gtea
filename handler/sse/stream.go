@@ -15,6 +15,9 @@ func NewHandler(h Downstream) http.HandlerFunc {
 // Downstream take over the responsibility to write the event to the ResponseWriter.
 type Downstream func(http.ResponseWriter, http.Flusher)
 
+// MsgHandle handle a signal message
+type MsgHandle func(http.ResponseWriter, http.Flusher, any)
+
 // Demo time tick SSE
 func Demo(w http.ResponseWriter, r *http.Request) {
 	Handle(w, r, demoLoop)
