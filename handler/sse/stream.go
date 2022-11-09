@@ -16,7 +16,7 @@ func NewHandler(h Downstream) http.HandlerFunc {
 type Downstream func(http.ResponseWriter, http.Flusher)
 
 // MsgHandle handle a signal message
-type MsgHandle func(http.ResponseWriter, http.Flusher, any)
+type MsgHandle func(http.ResponseWriter, http.Flusher, any) error
 
 // Demo time tick SSE
 func Demo(w http.ResponseWriter, r *http.Request) {
@@ -24,17 +24,25 @@ func Demo(w http.ResponseWriter, r *http.Request) {
 }
 
 // SendStringMsg sugar
-func SendStringMsg(w http.ResponseWriter, f http.Flusher, msg string) {
+func SendStringMsg(w http.ResponseWriter, f http.Flusher, msg string) error {
 	eMsg := NewMessage(msg)
-	w.Write(eMsg.Bytes())
+	_, err := w.Write(eMsg.Bytes())
+	if err != nil {
+		return err
+	}
 	f.Flush()
+	return nil
 }
 
 // SendAnyMsg sugar
-func SendAnyMsg(w http.ResponseWriter, f http.Flusher, msg interface{}) {
+func SendAnyMsg(w http.ResponseWriter, f http.Flusher, msg interface{}) error {
 	eMsg := NewMessage(msg)
-	w.Write(eMsg.Bytes())
+	_, err := w.Write(eMsg.Bytes())
+	if err != nil {
+		return err
+	}
 	f.Flush()
+	return nil
 }
 
 // Handle downstream
@@ -56,10 +64,14 @@ func Handle(w http.ResponseWriter, r *http.Request, h Downstream) {
 }
 
 // Shutdown send shutdown event to client
-func Shutdown(w http.ResponseWriter, f http.Flusher) {
+func Shutdown(w http.ResponseWriter, f http.Flusher) error {
 	shutMsg := NewEvent("shutdown", "bye")
-	w.Write(shutMsg.Bytes())
+	_, err := w.Write(shutMsg.Bytes())
+	if err != nil {
+		return err
+	}
 	f.Flush()
+	return nil
 }
 
 func demoLoop(w http.ResponseWriter, f http.Flusher) {
@@ -67,7 +79,10 @@ func demoLoop(w http.ResponseWriter, f http.Flusher) {
 	defer timer.Stop()
 	for i := 0; i < 3; i++ {
 		msg := NewMessage(i)
-		w.Write(msg.Bytes())
+		_, err := w.Write(msg.Bytes())
+		if err != nil {
+			return
+		}
 		jsonMsg := struct {
 			ID   int
 			Time time.Time
