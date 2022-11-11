@@ -3,6 +3,7 @@ package sse
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -14,36 +15,32 @@ type Event struct {
 	retry    *string
 }
 
+func strPoint(name string, data *string) string {
+	if data == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s: %s\n", name, *data)
+}
+
 // Bytes marshal the event as a byte slice. Escape '\n' to '\r\n'
 func (e Event) Bytes() []byte {
 	if e.data == nil {
 		return nil
 	}
 	buf := new(bytes.Buffer)
-	if e.id != nil {
-		buf.WriteString("id: ")
-		buf.WriteString(*e.id + "\n")
+	buf.WriteString(strPoint("id", e.id))
+	buf.WriteString(strPoint("event", e.name))
+	buf.WriteString(strPoint("retry", e.retry))
+	buf.WriteString("data: ")
+	bs, err := json.Marshal(e.data)
+	if err != nil {
+		return nil
 	}
-	if e.name != nil {
-		buf.WriteString("event: ")
-		buf.WriteString(*e.name + "\n")
-	}
-	if e.retry != nil {
-		buf.WriteString("retry: ")
-		buf.WriteString(*e.retry + "\n")
-	}
-	if e.data != nil {
-		buf.WriteString("data: ")
-		bs, err := json.Marshal(e.data)
-		if err != nil {
-			return nil
-		}
-		for _, b := range bs {
-			if b == '\n' {
-				buf.WriteString("\r\n")
-			} else {
-				buf.WriteByte(b)
-			}
+	for _, b := range bs {
+		if b == '\n' {
+			buf.WriteString("\r\n")
+		} else {
+			buf.WriteByte(b)
 		}
 	}
 	buf.WriteString("\n\n")

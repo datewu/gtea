@@ -11,6 +11,7 @@ type Message struct {
 	Err     error
 }
 
+// JobParam ...
 type JobParam struct {
 	Chan   chan Message
 	Cancle context.CancelFunc
