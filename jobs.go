@@ -22,8 +22,8 @@ type JobParam struct {
 func (app *App) AddClearFn(fn func()) {
 	app.clearWG.Add(1)
 	f := func() {
+		defer app.clearWG.Done()
 		fn()
-		app.clearWG.Done()
 	}
 	app.clearFns = append(app.clearFns, f)
 }
