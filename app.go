@@ -56,10 +56,11 @@ func DefaultApp() *App {
 
 // Config is the configuration for the application
 type Config struct {
-	Port     int
-	Env      string
-	Metrics  bool
-	LogLevel jsonlog.Level
+	Port           int
+	Env            string
+	Metrics        bool
+	LogLevel       jsonlog.Level
+	NoWirteTimeout bool
 }
 
 // DefaultConfig is the default configuration for the application

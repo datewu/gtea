@@ -21,7 +21,9 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	}
 	srv.IdleTimeout = time.Minute
 	srv.ReadTimeout = 10 * time.Second
-	srv.WriteTimeout = 30 * time.Second
+	if !app.config.NoWirteTimeout {
+		srv.WriteTimeout = 30 * time.Second
+	}
 
 	go handleOSsignal(ctx, app, srv)
 	app.Logger.Info("starting server", map[string]string{

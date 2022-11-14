@@ -2,6 +2,7 @@ package jsonlog
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"runtime/debug"
@@ -79,6 +80,11 @@ func (l *Logger) print(level Level, msg string, props map[string]string) (int, e
 
 	if level >= LevelError {
 		aux.Trace = string(debug.Stack())
+		l.mu.Lock()
+		fmt.Fprintln(l.out, "Trace:")
+		fmt.Fprintln(l.out, aux.Trace)
+		fmt.Fprintln(l.out)
+		l.mu.Unlock()
 	}
 	var line []byte
 	line, err := json.Marshal(aux)
