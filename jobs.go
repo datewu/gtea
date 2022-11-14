@@ -45,17 +45,14 @@ func (app *App) AddBGJob(name string, fn func(context.Context, chan<- Message)) 
 	go func() {
 		defer app.RemoveBGChan(name)
 		defer app.bgWG.Done()
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(app.ctx)
 		defer cancel()
-		param := &JobParam{
-			Chan:   make(chan Message),
-			Cancle: cancel,
-		}
-		defer close(param.Chan)
+		param := &JobParam{Chan: make(chan Message), Cancle: cancel}
 		app.bgLock.Lock()
 		app.bgJobs[name] = param
 		app.bgLock.Unlock()
 		defer rcv()
+		defer close(param.Chan)
 		fn(ctx, param.Chan)
 	}()
 	return nil
