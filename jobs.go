@@ -43,7 +43,7 @@ func (app *App) AddBGJob(name string, fn func(context.Context, chan<- Message)) 
 	}
 	app.bgWG.Add(1)
 	go func() {
-		defer app.RemoveBGChan(name)
+		defer app.removeBGJob(name)
 		defer app.bgWG.Done()
 		ctx, cancel := context.WithCancel(app.ctx)
 		defer cancel()
@@ -78,9 +78,9 @@ func (app *App) GetBGChan(name string) <-chan Message {
 	return job.Chan
 }
 
-// RemoveBGChan remove job feedback chan
+// removeBGJob remove background job
 // goroutine safe
-func (app *App) RemoveBGChan(name string) {
+func (app *App) removeBGJob(name string) {
 	app.bgLock.Lock()
 	defer app.bgLock.Unlock()
 	delete(app.bgJobs, name)
