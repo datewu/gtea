@@ -93,10 +93,10 @@ func (g *RoutesGroup) Delete(path string, handler http.HandlerFunc) {
 
 // Static serve dir dest
 func (g *RoutesGroup) Static(path string, dst string) {
-	g.r.Static(path, dst)
+	g.r.Static(g.prefix+path, dst)
 }
 
 // StaticGZIP serve dir dest with Gzip middleware
 func (g *RoutesGroup) StaticGZIP(path string, dst string) {
-	g.r.ServeFilesWithGzip(path, http.Dir(dst))
+	g.r.ServeFilesWithGzip(g.prefix+path, http.Dir(dst))
 }
