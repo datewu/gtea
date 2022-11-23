@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/datewu/gtea/handler"
+	"github.com/datewu/gtea/handler/static"
 	"github.com/datewu/gtea/router"
 )
 
@@ -21,10 +22,17 @@ func main() {
 	r.Put("/ok", handler.HealthCheck)
 	r.Delete("/ok", handler.HealthCheck)
 	r.Static("/abc", "../../")
-	r.Static("/", "../")
+	r.Static("/", "../../../../..")
+	fs := static.FS{
+		NoDir:   true,
+		TryFile: []string{},
+		Root:    "/Users/r/repo/gtea/",
+	}
+	r.ServeFS("/test/fs", fs)
 	srv := &http.Server{
 		Addr:    ":8090",
 		Handler: r.Handler(),
 	}
+	fmt.Println("listen on:", srv.Addr)
 	fmt.Println("start serve", srv.ListenAndServe())
 }
