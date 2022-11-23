@@ -54,6 +54,11 @@ func (l *Logger) Err(err error, props map[string]string) {
 	l.print(LevelError, err.Error(), props)
 }
 
+// Trace writes a log entry at TraceLevel to the output destination.
+func (l *Logger) Trace(err error, props map[string]string) {
+	l.print(LevelTrace, err.Error(), props)
+}
+
 // Fatal writes a log entry at LevelFatal to the output destination
 // and exit 1.
 func (l *Logger) Fatal(err error, props map[string]string) {
@@ -78,7 +83,7 @@ func (l *Logger) print(level Level, msg string, props map[string]string) (int, e
 		Properties: props,
 	}
 
-	if level >= LevelError {
+	if level >= LevelTrace {
 		aux.Trace = string(debug.Stack())
 		l.mu.Lock()
 		fmt.Fprintln(l.out, "Trace:")

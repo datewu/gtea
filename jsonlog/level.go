@@ -6,6 +6,7 @@ const (
 	LevelDebug Level = iota
 	LevelInfo
 	LevelError
+	LevelTrace
 	LevelFatal
 	LevelOff
 )
@@ -19,6 +20,8 @@ func (l Level) String() string {
 		return "INFO"
 	case LevelError:
 		return "ERROR"
+	case LevelTrace:
+		return "Trace"
 	case LevelFatal:
 		return "FATAL"
 	default:

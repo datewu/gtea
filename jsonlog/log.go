@@ -15,6 +15,11 @@ func Err(err error, props map[string]string) {
 	defaultLogger.Err(err, props)
 }
 
+// Trace defaultLogger.Trace
+func Trace(err error, props map[string]string) {
+	defaultLogger.Trace(err, props)
+}
+
 // Fatal defaultLogger.Fatal
 func Fatal(err error, props map[string]string) {
 	defaultLogger.Fatal(err, props)
