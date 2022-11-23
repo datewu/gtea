@@ -49,6 +49,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 // Shutdown call clearFns one by one
 func (app *App) Shutdown() {
 	for _, fn := range app.clearFns {
+		app.clearWG.Add(1)
 		go fn()
 	}
 	app.clearWG.Wait()

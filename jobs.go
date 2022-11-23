@@ -20,7 +20,6 @@ type JobParam struct {
 // AddClearFn add defer func in app.shutdown you may add db.close, redis.close, etc
 // not goroutine safe
 func (app *App) AddClearFn(fn func()) {
-	app.clearWG.Add(1)
 	f := func() {
 		defer app.clearWG.Done()
 		fn()
