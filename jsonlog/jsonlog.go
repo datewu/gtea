@@ -40,42 +40,42 @@ func Default() *Logger {
 }
 
 // Debug writes a log entry at LevelDebug to the output destination.
-func (l *Logger) Debug(msg string, props map[string]string) {
-	l.print(LevelDebug, msg, props)
+func (l *Logger) Debug(msg string, props ...map[string]interface{}) {
+	l.print(LevelDebug, msg, props...)
 }
 
 // Info writes a log entry at LevelInfo to the output destination.
-func (l *Logger) Info(msg string, props map[string]string) {
-	l.print(LevelInfo, msg, props)
+func (l *Logger) Info(msg string, props ...map[string]interface{}) {
+	l.print(LevelInfo, msg, props...)
 }
 
 // Err writes a log entry at LevelError to the output destination.
-func (l *Logger) Err(err error, props map[string]string) {
-	l.print(LevelError, err.Error(), props)
+func (l *Logger) Err(err error, props ...map[string]interface{}) {
+	l.print(LevelError, err.Error(), props...)
 }
 
 // Trace writes a log entry at TraceLevel to the output destination.
-func (l *Logger) Trace(err error, props map[string]string) {
-	l.print(LevelTrace, err.Error(), props)
+func (l *Logger) Trace(err error, props ...map[string]interface{}) {
+	l.print(LevelTrace, err.Error(), props...)
 }
 
 // Fatal writes a log entry at LevelFatal to the output destination
 // and exit 1.
-func (l *Logger) Fatal(err error, props map[string]string) {
-	l.print(LevelFatal, err.Error(), props)
+func (l *Logger) Fatal(err error, props ...map[string]interface{}) {
+	l.print(LevelFatal, err.Error(), props...)
 	os.Exit(1)
 }
 
-func (l *Logger) print(level Level, msg string, props map[string]string) (int, error) {
+func (l *Logger) print(level Level, msg string, props ...map[string]interface{}) (int, error) {
 	if level < l.minLevel {
 		return 0, nil
 	}
 	aux := struct {
-		Level      string            `json:"level"`
-		Time       string            `json:"time"`
-		Message    string            `json:"message"`
-		Properties map[string]string `json:"properties,omitempty"`
-		Trace      string            `json:"trace,omitempty"`
+		Level      string                   `json:"level"`
+		Time       string                   `json:"time"`
+		Message    string                   `json:"message"`
+		Properties []map[string]interface{} `json:"properties,omitempty"`
+		Trace      string                   `json:"trace,omitempty"`
 	}{
 		Level:      level.String(),
 		Time:       time.Now().UTC().Format(time.RFC3339),
