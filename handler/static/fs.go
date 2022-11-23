@@ -2,7 +2,6 @@ package static
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"path/filepath"
@@ -40,7 +39,6 @@ func (f FS) Open(name string) (http.File, error) {
 			return nil, err
 		}
 		if info.IsDir() {
-			fmt.Println("name:", info.Name())
 			if info.Name() == filepath.Base(f.Root) && f.TryFile != nil {
 				return file, nil
 			}
