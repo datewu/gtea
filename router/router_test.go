@@ -162,7 +162,7 @@ func TestNormalMiddler(t *testing.T) {
 	conf := &Config{}
 	r := NewRouter(conf)
 	msg := " inject a msg "
-	r.aggMiddleware = newNormalMiddler(msg)
+	r.middleware = newNormalMiddler(msg)
 	r.Get("/", handler.HealthCheck)
 
 	expect := msg + `{"status":"available"}`
@@ -173,7 +173,9 @@ func TestAggNormalMiddler(t *testing.T) {
 	conf := &Config{}
 	r := NewRouter(conf)
 	_, ms, msg := newMiddlerwares(false)
-	r.aggMiddleware = handler.AggregateMds(ms)
+	for _, m := range ms {
+		r.middleware = handler.Append(r.middleware, m)
+	}
 	r.Get("/", handler.HealthCheck)
 	expect := msg + `{"status":"available"}`
 	getReqHelper("/", r.Handler(), http.StatusOK, expect, t)
@@ -186,7 +188,9 @@ func TestAggNormalMiddlerWithAbort(t *testing.T) {
 	if len(ms) != len(msgs) {
 		t.Errorf("expected %d middlers got %d", len(msgs), len(ms))
 	}
-	r.aggMiddleware = handler.AggregateMds(ms)
+	for _, m := range ms {
+		r.middleware = handler.Append(r.middleware, m)
+	}
 	r.Get("/", handler.HealthCheck)
 	expect := msg
 	getReqHelper("/", r.Handler(), http.StatusOK, expect, t)

@@ -16,22 +16,15 @@ func (r *Router) corsMiddleware() handler.Middleware {
 }
 
 func (r *Router) aggBuildInMiddlewares() {
-	ms := []handler.Middleware{}
-	// note the order is siginificant
-	// outer if executed first then low index
 	if r.conf.Limiter.Enabled {
-		ms = append(ms, r.rateLimitMiddleware())
+		r.middleware = handler.Insert(r.middleware, r.rateLimitMiddleware())
 	}
 	if r.conf.CORS.TrustedOrigins != nil {
-		ms = append(ms, r.corsMiddleware())
+		r.middleware = handler.Insert(r.middleware, r.corsMiddleware())
 	}
-	ms = append(ms, handler.RecoverPanicMiddleware)
 	if r.conf.Metrics {
 		r.Handle(http.MethodGet, "/debug/vars", expvar.Handler())
-		ms = append(ms, handler.MetricsMiddleware)
+		r.middleware = handler.Insert(r.middleware, handler.MetricsMiddleware)
 	}
-	if r.aggMiddleware != nil {
-		ms = append(ms, r.aggMiddleware)
-	}
-	r.aggMiddleware = handler.AggregateMds(ms)
+	r.middleware = handler.Append(r.middleware, handler.RecoverPanicMiddleware)
 }

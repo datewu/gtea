@@ -30,23 +30,44 @@ var AbortMiddleware = Middleware(func(next http.HandlerFunc) http.HandlerFunc {
 	return VoidHandlerFunc
 })
 
-// AggregateMds aggrate middlewares.
-func AggregateMds(ms []Middleware) Middleware {
-	size := len(ms)
-	if size == 0 {
-		return nil
+// Append middleware after base middleware.
+func Append(base, later Middleware) Middleware {
+	if later == nil {
+		return base
+	}
+	if base == nil {
+		return later
 	}
 	md := func(next http.HandlerFunc) http.HandlerFunc {
-		h := func(w http.ResponseWriter, r *http.Request) {
-			for i := size - 1; i >= 0; i-- {
-				if ms[i] == nil {
-					continue
-				}
-				next = ms[i](next)
-			}
-			next(w, r)
-		}
-		return h
+		next = later(next)
+		return base(next)
+	}
+	return md
+}
+
+// Insert middleware befer base middlware
+func Insert(base, first Middleware) Middleware {
+	if first == nil {
+		return base
+	}
+	if base == nil {
+		return first
+	}
+	md := func(next http.HandlerFunc) http.HandlerFunc {
+		next = base(next)
+		return first(next)
+	}
+	return md
+}
+
+// Aggregate middlewares.
+func Aggregate(mds ...Middleware) Middleware {
+	if len(mds) < 1 {
+		return nil
+	}
+	md := mds[0]
+	for i := 1; i < len(mds); i++ {
+		md = Insert(md, mds[i])
 	}
 	return md
 }

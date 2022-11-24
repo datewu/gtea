@@ -9,9 +9,9 @@ import (
 
 // RoutesGroup is a group of routes
 type RoutesGroup struct {
-	r             *Router
-	prefix        string
-	aggMiddleware handler.Middleware
+	r           *Router
+	prefix      string
+	middlerware handler.Middleware
 }
 
 // NewRoutesGroup return a new routesgroup
@@ -20,9 +20,9 @@ func NewRoutesGroup(conf *Config) (*RoutesGroup, error) {
 		return nil, errors.New("no router config provided")
 	}
 	r := NewRouter(conf)
-	// this "/v1/healthcheck" escape all routerGroup.aggMiddleware
-	r.HandleFunc(http.MethodGet, "/v1/healthcheck", handler.HealthCheck)
-	return &RoutesGroup{r: r}, nil
+	g := &RoutesGroup{r: r}
+	g.Get("/v1/healthcheck", handler.HealthCheck)
+	return g, nil
 }
 
 // Handler return http.Handler
@@ -34,15 +34,9 @@ func (g *RoutesGroup) Handler() Handler {
 // middleware will be called in the order of use
 // Or call NewHandler to add a new middleware
 func (g *RoutesGroup) Use(mds ...handler.Middleware) {
-	if len(mds) == 0 {
-		return
+	for _, v := range mds {
+		g.middlerware = handler.Append(g.middlerware, v)
 	}
-	ms := make([]handler.Middleware, len(mds)+1)
-	ms[0] = g.aggMiddleware
-	for i, v := range mds {
-		ms[i+1] = v
-	}
-	g.aggMiddleware = handler.AggregateMds(ms)
 }
 
 // Group add a prefix to all path, for each Gropu call
@@ -52,16 +46,16 @@ func (g *RoutesGroup) Group(path string, mds ...handler.Middleware) *RoutesGroup
 		r:      g.r,
 		prefix: g.prefix + path,
 	}
-	if mds != nil {
-		gp.aggMiddleware = handler.AggregateMds(mds)
+	for _, v := range mds {
+		gp.middlerware = handler.Append(gp.middlerware, v)
 	}
 	return gp
 }
 
 // HandleFunc handle new http request
 func (g *RoutesGroup) HandleFunc(method, path string, handler http.HandlerFunc) {
-	if g.aggMiddleware != nil {
-		handler = g.aggMiddleware(handler)
+	if g.middlerware != nil {
+		handler = g.middlerware(handler)
 	}
 	g.r.HandleFunc(method, g.prefix+path, handler)
 }

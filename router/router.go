@@ -8,9 +8,9 @@ import (
 
 // Router ..
 type Router struct {
-	conf          *Config
-	trie          *pathTrie
-	aggMiddleware handler.Middleware
+	conf       *Config
+	trie       *pathTrie
+	middleware handler.Middleware
 }
 
 // Handler serveHTTP
@@ -37,7 +37,7 @@ func (ro *Router) Handler() Handler {
 	ro.aggBuildInMiddlewares()
 	h := Handler{
 		trie: *ro.trie,
-		md:   ro.aggMiddleware,
+		md:   ro.middleware,
 	}
 	if h.md == nil {
 		h.md = handler.VoidMiddleware
