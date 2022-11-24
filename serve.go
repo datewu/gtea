@@ -69,13 +69,13 @@ func handleOSsignal(ctx context.Context, app *App, srv *http.Server) {
 	if err != nil {
 		app.shutdownStream <- err
 	}
-	app.Logger.Info("going cancel background jobs", nil)
+	app.Logger.Info("going cancel all background jobs")
 	for name, j := range app.bgJobs {
 		j.Cancle()
 		app.Logger.Info("canceled bg job:", map[string]interface{}{"name": name})
 	}
 	app.bgWG.Wait()
-	app.Logger.Info("all bgWG wait done", nil)
+	app.Logger.Info("all bgWG wait done")
 	app.shutdownStream <- nil
 	close(app.shutdownStream)
 }
