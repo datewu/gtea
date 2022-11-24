@@ -77,6 +77,62 @@ func TestGrupWithMiddlerware(t *testing.T) {
 	othersApplyMiddlewares()
 }
 
+func TestGroupWithAuth(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	okToken := func(string) (bool, error) {
+		return true, nil
+	}
+	badToken := func(string) (bool, error) {
+		return false, nil
+	}
+	g.Get("/lol", handler.HealthCheck)
+	ok := g.Group("/okauth", handler.TokenMiddleware(okToken))
+	ok.Get("/ok", handler.HealthCheck)
+	bad := g.Group("/badauth", handler.TokenMiddleware(badToken))
+	bad.Get("/notok", handler.HealthCheck)
+	h := g.Handler()
+	buildInHealthEscapeAggMiddles := func() {
+		defaultHealthcheckHelper(h, t)
+	}
+	buildInHealthEscapeAggMiddles()
+	expect := `{"status":"available"}`
+	badExpect := `{"error":"you must be authenticated to access this resource"}`
+	badExpect403 := `{"error":"your user account doesn't have the necessary permissions to access this resource"}`
+	getReqHelper("/lol", h, http.StatusOK, expect, t)
+	getReqHelper("/okauth/ok", h, http.StatusUnauthorized, badExpect, t)
+	getReqHelper("/okauth/ok?token=ok", h, http.StatusOK, expect, t)
+
+	getReqHelper("/badauth/notok", h, http.StatusUnauthorized, badExpect, t)
+	getReqHelper("/badauth/notok?token=ok", h, http.StatusForbidden, badExpect403, t)
+}
+
+func TestGroupWithAbortMiddleware(t *testing.T) {
+	rconf := &Config{}
+	g, err := NewRoutesGroup(rconf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msgs, ms, msg := newMiddlerwares(true)
+	if len(ms) != len(msgs) {
+		t.Errorf("expected %d middlers got %d", len(msgs), len(ms))
+	}
+	gh := g.Group("/hello", ms...)
+	gh.Get("/abc", handler.HealthCheck)
+	h := gh.Handler()
+	buildInHealthEscapeAggMiddles := func() {
+		defaultHealthcheckHelper(h, t)
+	}
+	othersApplyMiddlewares := func() {
+		getReqHelper("/hello/abc", h, http.StatusOK, msg, t)
+	}
+	buildInHealthEscapeAggMiddles()
+	othersApplyMiddlewares()
+}
+
 func TestGroupHealhCheck(t *testing.T) {
 	rconf := &Config{}
 	g, err := NewRoutesGroup(rconf)
