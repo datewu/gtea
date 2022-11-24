@@ -40,11 +40,12 @@ func (g *RoutesGroup) Use(mds ...handler.Middleware) {
 }
 
 // Group add a prefix to all path, for each Gropu call
-// prefix will accumulate while middleware don't
+// prefix and middleware will accumulate
 func (g *RoutesGroup) Group(path string, mds ...handler.Middleware) *RoutesGroup {
 	gp := &RoutesGroup{
-		r:      g.r,
-		prefix: g.prefix + path,
+		r:           g.r,
+		middlerware: g.middlerware,
+		prefix:      g.prefix + path,
 	}
 	for _, v := range mds {
 		gp.middlerware = handler.Append(gp.middlerware, v)
