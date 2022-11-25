@@ -2,7 +2,21 @@ package handler
 
 import (
 	"net/http"
+	"time"
 )
+
+// SetSimpleCookie set key value within a week
+func SetSimpleCookie(w http.ResponseWriter, r *http.Request, k, v string) {
+	du := 7 * 24 * time.Hour
+	expire := time.Now().Add(du)
+	cookie := http.Cookie{
+		Name: k, Value: v,
+		Path:    "/",
+		Domain:  r.URL.Host,
+		Expires: expire, MaxAge: int(du.Seconds()),
+	}
+	http.SetCookie(w, &cookie)
+}
 
 // OKJSON response 200 respose with a json data
 func OKJSON(w http.ResponseWriter, data interface{}) {

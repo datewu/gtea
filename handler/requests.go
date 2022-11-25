@@ -91,6 +91,11 @@ func GetToken(r *http.Request, name string) (string, error) {
 	if token == "" {
 		return "", ErrNoToken
 	}
+	c, err := r.Cookie(name)
+	if err != nil {
+		return "", err
+	}
+	token = c.Value
 	return token, nil
 }
 
