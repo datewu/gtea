@@ -79,6 +79,7 @@ func GetBeareToken(r *http.Request, name string) (string, error) {
 }
 
 // GetToken returns the token from the request
+// query > header > cookie
 func GetToken(r *http.Request, name string) (string, error) {
 	if name == "" {
 		name = "token"
@@ -88,14 +89,17 @@ func GetToken(r *http.Request, name string) (string, error) {
 		return q, nil
 	}
 	token := r.Header.Get("Authorization")
-	if token == "" {
-		return "", ErrNoToken
+	if token != "" {
+		return token, nil
 	}
 	c, err := r.Cookie(name)
 	if err != nil {
 		return "", err
 	}
 	token = c.Value
+	if token == "" {
+		return "", ErrNoToken
+	}
 	return token, nil
 }
 
