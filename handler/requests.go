@@ -92,9 +92,9 @@ func GetToken(r *http.Request, name string) (string, error) {
 	if token != "" {
 		return token, nil
 	}
-	c, err := r.Cookie(name)
-	if err != nil {
-		return "", err
+	c, _ := r.Cookie(name)
+	if c == nil {
+		return "", ErrNoToken
 	}
 	token = c.Value
 	if token == "" {
@@ -104,12 +104,12 @@ func GetToken(r *http.Request, name string) (string, error) {
 }
 
 // GetValue gets a value from the request context.
-func GetValue(r *http.Request, key interface{}) interface{} {
+func GetValue(r *http.Request, key any) any {
 	return r.Context().Value(key)
 }
 
 // SetValue sets a value on the returned request.
-func SetValue(r *http.Request, key, value interface{}) *http.Request {
+func SetValue(r *http.Request, key, value any) *http.Request {
 	ctx := context.WithValue(r.Context(), key, value)
 	return r.WithContext(ctx)
 }
@@ -193,7 +193,7 @@ func ReadInt64Query(r *http.Request, key string, defaultValue int64) int64 {
 }
 
 // ReadJSON reads the request body up to the max size and unmarshal it to the given struct
-func ReadMaxJSON(w http.ResponseWriter, r *http.Request, dst interface{}, max int64) error {
+func ReadMaxJSON(w http.ResponseWriter, r *http.Request, dst any, max int64) error {
 	if max == 0 {
 		max = 8 * 1_048_576 // 8MB for max readJSON body
 	}
@@ -208,11 +208,11 @@ func ReadMaxJSON(w http.ResponseWriter, r *http.Request, dst interface{}, max in
 }
 
 // ReadJSON reads the request body and unmarshal it to the given struct
-func ReadJSON(r *http.Request, dst interface{}) error {
+func ReadJSON(r *http.Request, dst any) error {
 	return decodeJSON(r.Body, dst)
 }
 
-func decodeJSON(r io.Reader, dst interface{}) error {
+func decodeJSON(r io.Reader, dst any) error {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()
 	err := dec.Decode(dst)

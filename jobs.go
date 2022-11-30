@@ -7,7 +7,7 @@ import (
 
 // Message chan feedback
 type Message struct {
-	Payload interface{}
+	Payload any
 	Err     error
 }
 

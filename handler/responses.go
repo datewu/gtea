@@ -19,7 +19,7 @@ func SetSimpleCookie(w http.ResponseWriter, r *http.Request, k, v string) {
 }
 
 // OKJSON response 200 respose with a json data
-func OKJSON(w http.ResponseWriter, data interface{}) {
+func OKJSON(w http.ResponseWriter, data any) {
 	WriteJSON(w, http.StatusOK, data, nil)
 }
 
@@ -98,7 +98,7 @@ func FailedValidation(w http.ResponseWriter, errs map[string]string) {
 
 // ServerErr a general 500 response with an err
 func ServerErr(w http.ResponseWriter, err error) {
-	errs := map[string]interface{}{
+	errs := map[string]any{
 		"error":  "the server encountered a problem and could not process your request",
 		"detail": err.Error(),
 	}
@@ -106,8 +106,8 @@ func ServerErr(w http.ResponseWriter, err error) {
 }
 
 // ServerErrAny a general 500 response
-func ServerErrAny(w http.ResponseWriter, msg interface{}) {
-	errs := map[string]interface{}{
+func ServerErrAny(w http.ResponseWriter, msg any) {
+	errs := map[string]any{
 		"error":  "the server encountered a problem and could not process your request",
 		"detail": msg,
 	}

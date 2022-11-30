@@ -5,13 +5,13 @@ import (
 	"net/http"
 )
 
-func errResponse(w http.ResponseWriter, code int, msg interface{}) {
+func errResponse(w http.ResponseWriter, code int, msg any) {
 	data := Envelope{"error": msg}
 	WriteJSON(w, code, data, nil)
 }
 
 // Envelope is a JSON envelope for better client response
-type Envelope map[string]interface{}
+type Envelope map[string]any
 
 // WriteStr writes a string to the response.
 func WriteStr(w http.ResponseWriter, status int, msg string, headers http.Header) {
@@ -23,7 +23,7 @@ func WriteStr(w http.ResponseWriter, status int, msg string, headers http.Header
 }
 
 // writeJSON writes a JSON object to the response.
-func WriteJSON(w http.ResponseWriter, status int, data interface{}, headers http.Header) {
+func WriteJSON(w http.ResponseWriter, status int, data any, headers http.Header) {
 	js, err := json.Marshal(data)
 	if err != nil {
 		msg := Envelope{"error": err}

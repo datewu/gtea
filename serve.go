@@ -26,7 +26,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	}
 
 	go handleOSsignal(ctx, app, srv)
-	app.Logger.Info("starting server", map[string]interface{}{
+	app.Logger.Info("starting server", map[string]any{
 		"env":  app.config.Env,
 		"addr": srv.Addr,
 	})
@@ -39,7 +39,7 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	if err != nil {
 		return err
 	}
-	app.Logger.Info("stopped server", map[string]interface{}{
+	app.Logger.Info("stopped server", map[string]any{
 		"addr": srv.Addr,
 	})
 	app.Shutdown()
@@ -60,7 +60,7 @@ func handleOSsignal(ctx context.Context, app *App, srv *http.Server) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	s := <-quit
-	app.Logger.Info("caught signal", map[string]interface{}{
+	app.Logger.Info("caught signal", map[string]any{
 		"signal": s.String(),
 	})
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -72,7 +72,7 @@ func handleOSsignal(ctx context.Context, app *App, srv *http.Server) {
 	app.Logger.Info("going cancel all background jobs")
 	for name, j := range app.bgJobs {
 		j.Cancle()
-		app.Logger.Info("canceled bg job:", map[string]interface{}{"name": name})
+		app.Logger.Info("canceled bg job:", map[string]any{"name": name})
 	}
 	app.bgWG.Wait()
 	app.Logger.Info("all bgWG wait done")

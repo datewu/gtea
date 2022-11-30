@@ -30,10 +30,10 @@ type App struct {
 func NewApp(ctx context.Context, cfg *Config) *App {
 	logger := jsonlog.New(os.Stdout, cfg.LogLevel)
 	if cfg.Metrics {
-		expvar.Publish("goroutines", expvar.Func(func() interface{} {
+		expvar.Publish("goroutines", expvar.Func(func() any {
 			return runtime.NumGoroutine()
 		}))
-		expvar.Publish("timestamp", expvar.Func(func() interface{} {
+		expvar.Publish("timestamp", expvar.Func(func() any {
 			return time.Now().Unix()
 		}))
 	}
