@@ -2,6 +2,7 @@ package gtea
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -25,6 +26,23 @@ func (app *App) AddClearFn(fn func()) {
 		fn()
 	}
 	app.clearFns = append(app.clearFns, f)
+}
+
+// FireAnonymousJob start a background job, goroutine safe
+func (app *App) FireAnonymousJob(fn func(context.Context)) {
+	rcv := func() {
+		if r := recover(); r != nil {
+			app.Logger.Err(errors.New("an anonymous job, recovered"))
+		}
+	}
+	app.bgWG.Add(1)
+	go func() {
+		defer app.bgWG.Done()
+		ctx, cancel := context.WithCancel(app.ctx)
+		defer cancel()
+		defer rcv()
+		fn(ctx)
+	}()
 }
 
 // AddBGJob start a background job, goroutine safe
