@@ -52,9 +52,7 @@ func TestNewCaptcha(t *testing.T) {
 }
 
 func TestRand(t *testing.T) {
-	fmt.Println(randomN(2))
-	fmt.Println(randomN(3))
-	fmt.Println(randomN(4))
-	fmt.Println(randomN(5))
-	fmt.Println(randomN(6))
+	for i := 0; i < 7; i++ {
+		fmt.Println(randomN(i))
+	}
 }

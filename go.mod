@@ -1,9 +1,9 @@
 module github.com/datewu/gtea
 
-go 1.19
+go 1.20
 
 require (
-	github.com/datewu/security v0.2.2
+	github.com/datewu/security v0.2.3
 	golang.org/x/time v0.3.0
 )
 

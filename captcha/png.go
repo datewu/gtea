@@ -7,12 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"sync"
-	"time"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 func randomN(m int) int {
 	if m < 2 {
