@@ -83,7 +83,7 @@ func drawMahjong(n, xoffset int, img *image.RGBA) {
 		x := singleCaptchaWidth/2 + xoffset
 		y := captchaHeight / 2
 		thick := 4
-		width := singleCaptchaWidth / 3
+		width := singleCaptchaWidth / 5 * 4
 		height := captchaHeight / 7 * 4
 		left := x - width/2 - thick
 		right := x + width/2 + thick
