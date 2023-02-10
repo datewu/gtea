@@ -89,40 +89,32 @@ func drawMahjong(n, xoffset int, img *image.RGBA) {
 		right := x + width/2 + thick
 		up := y - height/2 - thick
 		down := y + height/2 + thick
-		for m := left; m < right; m++ {
-			for n := up; n < up+thick; n++ {
-				if n%2 == 1 {
-					if m > left+2 && m < right-2 {
+		for m := left; m <= right; m++ {
+			for n := up; n <= down; n++ {
+				switch {
+				case m == left, m == right:
+					img.Set(m, n, colorOuterBlue)
+					continue
+				case m == left+2, m == right-2:
+					if n >= up+2 && n <= down-2 {
+						img.Set(m, n, colorOuterBlue)
+					}
+					if n == up || n == down {
+						img.Set(m, n, colorOuterBlue)
+					}
+					continue
+				case n < up+thick, n > down-thick:
+					if n%2 == 1 {
 						continue
 					}
-				}
-				img.Set(m, n, colorOuterBlue)
-			}
-			for n := down; n > down-thick; n-- {
-				if n%2 == 1 {
-					if m > left+2 && m < right-2 {
-						continue
+					if n == up+2 || n == down-2 {
+						if m > left+2 && m < right-2 {
+							img.Set(m, n, colorOuterBlue)
+						}
+					} else {
+						img.Set(m, n, colorOuterBlue)
 					}
 				}
-				img.Set(m, n, colorOuterBlue)
-			}
-		}
-		for n := up; n < down; n++ {
-			for m := left; m < left+thick; m++ {
-				if m%2 == 1 {
-					if n > up+4 && n < down-4 {
-						continue
-					}
-				}
-				img.Set(m, n, colorOuterBlue)
-			}
-			for m := right; m > right-thick; m-- {
-				if m%2 == 1 {
-					if n > up+4 && n < down-4 {
-						continue
-					}
-				}
-				img.Set(m, n, colorOuterBlue)
 			}
 		}
 	case 1:
