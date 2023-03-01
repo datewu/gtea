@@ -26,3 +26,18 @@ func NotFoundMsg(msg string) http.HandlerFunc {
 	}
 	return fn
 }
+
+// Ok is a high order func
+func OkHandler(data any) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		WriteJSON(w, http.StatusOK, data, nil)
+	}
+}
+
+// Version response version
+func Version(ver string) http.HandlerFunc {
+	data := Envelope{
+		"version": ver,
+	}
+	return OkHandler(data)
+}
