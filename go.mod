@@ -7,4 +7,4 @@ require (
 	golang.org/x/time v0.3.0
 )
 
-require golang.org/x/crypto v0.6.0 // indirect
+require golang.org/x/crypto v0.8.0 // indirect
