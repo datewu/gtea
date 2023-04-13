@@ -12,8 +12,7 @@ import (
 	"time"
 )
 
-// Serve start http server
-func (app *App) Serve(ctx context.Context, routes http.Handler) error {
+func (app *App) httpServer(ctx context.Context, routes http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:     fmt.Sprintf(":%d", app.config.Port),
 		Handler:  routes,
@@ -24,14 +23,26 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	if !app.config.NoWirteTimeout {
 		srv.WriteTimeout = 30 * time.Second
 	}
+	return srv
+}
 
+// Serve start https server with cert private PEM encode file
+func (app *App) ServeTLS(ctx context.Context, routes http.Handler, cert, pKey string) error {
+	srv := app.httpServer(ctx, routes)
+	s := func() error {
+		return srv.ListenAndServeTLS(cert, pKey)
+	}
+	return app.serve(ctx, srv, s)
+}
+
+// Serve start http server
+func (app *App) serve(ctx context.Context, srv *http.Server, s func() error) error {
 	go handleOSsignal(ctx, app, srv)
 	app.Logger.Info("starting server", map[string]any{
 		"env":  app.config.Env,
 		"addr": srv.Addr,
 	})
-
-	err := srv.ListenAndServe()
+	err := s()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -44,6 +55,12 @@ func (app *App) Serve(ctx context.Context, routes http.Handler) error {
 	})
 	app.Shutdown()
 	return nil
+}
+
+// Serve start http server
+func (app *App) Serve(ctx context.Context, routes http.Handler) error {
+	srv := app.httpServer(ctx, routes)
+	return app.serve(ctx, srv, srv.ListenAndServe)
 }
 
 // Shutdown call clearFns one by one
