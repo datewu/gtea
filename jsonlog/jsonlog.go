@@ -41,47 +41,39 @@ func Default() *Logger {
 
 // Debug writes a log entry at LevelDebug to the output destination.
 func (l *Logger) Debug(msg string, props ...map[string]any) {
-	if props != nil {
-		l.print(LevelDebug, msg, props...)
-		return
-	}
-	l.print(LevelDebug, msg)
+	l.print(LevelDebug, msg, props...)
 }
 
 // Info writes a log entry at LevelInfo to the output destination.
 func (l *Logger) Info(msg string, props ...map[string]any) {
-	if props != nil {
-		l.print(LevelInfo, msg, props...)
-		return
-	}
-	l.print(LevelInfo, msg)
+	l.print(LevelInfo, msg, props...)
 }
 
 // Err writes a log entry at LevelError to the output destination.
 func (l *Logger) Err(err error, props ...map[string]any) {
-	if props != nil {
-		l.print(LevelError, err.Error(), props...)
+	if err == nil {
+		l.print(LevelError, "err is nil", props...)
 		return
 	}
-	l.print(LevelError, err.Error())
+	l.print(LevelError, err.Error(), props...)
 }
 
 // Trace writes a log entry at TraceLevel to the output destination.
 func (l *Logger) Trace(err error, props ...map[string]any) {
-	if props != nil {
-		l.print(LevelTrace, err.Error(), props...)
+	if err == nil {
+		l.print(LevelTrace, "err is nil", props...)
 		return
 	}
-	l.print(LevelTrace, err.Error())
+	l.print(LevelTrace, err.Error(), props...)
 }
 
 // Fatal writes a log entry at LevelFatal to the output destination
 // and exit 1.
 func (l *Logger) Fatal(err error, props ...map[string]any) {
-	if props != nil {
-		l.print(LevelFatal, err.Error(), props...)
+	if err == nil {
+		l.print(LevelFatal, "err is nil", props...)
 	} else {
-		l.print(LevelFatal, err.Error())
+		l.print(LevelFatal, err.Error(), props...)
 	}
 	os.Exit(1)
 }
