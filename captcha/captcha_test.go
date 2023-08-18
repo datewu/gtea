@@ -7,13 +7,15 @@ import (
 	"testing"
 )
 
+var pp Pnger = MajongPng{}
+
 func TestNewPNG123456(t *testing.T) {
 	out, err := os.Create("captcha_test.png")
 	if err != nil {
 		log.Fatalln(err)
 		return
 	}
-	out.Write(genPNG(123456))
+	out.Write(pp.PNG(123456))
 }
 func TestNewPNG789033(t *testing.T) {
 	out, err := os.Create("captcha_test.png")
@@ -21,7 +23,7 @@ func TestNewPNG789033(t *testing.T) {
 		log.Fatalln(err)
 		return
 	}
-	out.Write(genPNG(789033))
+	out.Write(pp.PNG(789033))
 }
 func TestNewPNG393938(t *testing.T) {
 	out, err := os.Create("captcha_test.png")
@@ -29,7 +31,7 @@ func TestNewPNG393938(t *testing.T) {
 		log.Fatalln(err)
 		return
 	}
-	out.Write(genPNG(393938))
+	out.Write(pp.PNG(393938))
 }
 
 func TestDigits(t *testing.T) {
@@ -39,15 +41,16 @@ func TestDigits(t *testing.T) {
 	ds := digits(n, p)
 	fmt.Println("digits:", ds)
 }
+
 func TestNewCaptcha(t *testing.T) {
-	c := NewCaptcha()
+	c := NewCaptcha(nil)
 	fmt.Printf("%#v\n", c)
 	out, err := os.Create("captcha_test.png")
 	if err != nil {
 		log.Fatalln(err)
 		return
 	}
-	out.Write(genPNG(c.Tag))
+	out.Write(pp.PNG(c.Tag))
 	fmt.Println(c.PNG())
 }
 

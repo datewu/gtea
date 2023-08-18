@@ -1,19 +1,38 @@
 package captcha
 
 import (
+	"bytes"
 	"image"
 	"image/color"
+	"image/png"
+	"math"
 	"math/rand"
+	"sync"
 )
 
-const (
-	captchaWidth       = 240
-	captchaXPadding    = 5
-	captchaGap         = 10
-	totalCaptchaDs     = 6
-	singleCaptchaWidth = captchaWidth / totalCaptchaDs
-	captchaHeight      = 80
-)
+type MajongPng struct{}
+
+func (m MajongPng) PNG(number int) []byte {
+	upLeft := image.Point{0, 0}
+	lowRight := image.Point{captchaWidth + 2*captchaXPadding +
+		(totalCaptchaDs-1)*captchaGap, captchaHeight}
+
+	img := image.NewRGBA(image.Rectangle{upLeft, lowRight})
+
+	ds := digits(number, totalCaptchaDs)
+	var wg sync.WaitGroup
+	for i, d := range ds {
+		wg.Add(1)
+		go func(n, offset int) {
+			defer wg.Done()
+			drawMahjong(n, offset, img)
+		}(d, captchaXPadding+i*(singleCaptchaWidth+captchaGap))
+	}
+	wg.Wait()
+	var buf bytes.Buffer
+	png.Encode(&buf, img)
+	return buf.Bytes()
+}
 
 var (
 	colorOuterBlue   = color.RGBA{55, 55, 180, 255}
@@ -254,4 +273,17 @@ func drawMahjong(n, xoffset int, img *image.RGBA) {
 		drawNormalRingAndCircle(x-marginx, y+marginy, r, colorMiddleGreen, img)
 		drawNormalRingAndCircle(x+marginx, y+marginy, r, colorMiddleGreen, img)
 	}
+}
+
+func digits(number, hight int) []int {
+	if hight < 2 {
+		return []int{number}
+	}
+	var digits []int
+	for i := hight - 1; i >= 0; i-- {
+		d := number / int(math.Pow10(i))
+		number -= d * int(math.Pow10(i))
+		digits = append(digits, d)
+	}
+	return digits
 }
