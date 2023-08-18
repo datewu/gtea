@@ -145,6 +145,19 @@ func ReadPathParam(r *http.Request, name string) string {
 	return ""
 }
 
+// ReadIntPathParam returns a int param value in the request path
+func ReadIntPathParam(r *http.Request, name string) (int, error) {
+	v := ReadPathParam(r, name)
+	if v == "" {
+		return 0, errors.New("empty param")
+	}
+	id, err := strconv.Atoi(v)
+	if err != nil || id < 1 {
+		return 0, errors.New("invalid id parameter")
+	}
+	return id, nil
+}
+
 // ReadInt64PathParam returns the int64 param value in the request path
 func ReadInt64PathParam(r *http.Request, name string) (int64, error) {
 	v := ReadPathParam(r, name)
@@ -176,6 +189,20 @@ func ReadCSVQuery(r *http.Request, key string, defaultValue []string) []string {
 		return defaultValue
 	}
 	return strings.Split(cs, ",")
+}
+
+// ReadIntQuery returns a int query value with a defaut value from the request
+func ReadIntQuery(r *http.Request, key string, defaultValue int) int {
+	qs := r.URL.Query()
+	s := qs.Get(key)
+	if s == "" {
+		return defaultValue
+	}
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return defaultValue
+	}
+	return i
 }
 
 // ReadInt64Query returns the int64 query value with a defaut value from the request

@@ -1,9 +1,22 @@
 package utils
 
+import (
+	"net/http"
+
+	"github.com/datewu/gtea/handler"
+)
+
 // Pagination represents a pagination object.
 type Pagination struct {
 	page    int
 	perPage int
+}
+
+// ParsePagination parse page & per_page query returns a new Pagination object.
+func ParsePagination(r *http.Request) *Pagination {
+	page := handler.ReadIntQuery(r, "page", 1)
+	size := handler.ReadIntQuery(r, "per_page", 20)
+	return NewPagination(page, size)
 }
 
 // NewPagination returns a new Pagination object.
