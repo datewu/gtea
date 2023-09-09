@@ -1,6 +1,6 @@
-github.com/datewu/security v0.2.3 h1:ZOefQrpJt0frnHUhx0iLzQG/zHRf0TdWohund9gYeSw=
-github.com/datewu/security v0.2.3/go.mod h1:XHGkoTsn/EkbujluKKLTcjxb5RNCJJIWYhVxD7BiIgY=
-golang.org/x/crypto v0.8.0 h1:pd9TJtTueMTVQXzk8E2XESSMQDj/U7OUu0PqJqPXQjQ=
-golang.org/x/crypto v0.8.0/go.mod h1:mRqEX+O9/h5TFCrQhkgjo2yKi0yYA+9ecGkdQoHrywE=
+github.com/datewu/security v0.2.5 h1:KPE3wvWTf2TGKU6ibHQ80Hr/dBu3wa0OOY3LfHnooZw=
+github.com/datewu/security v0.2.5/go.mod h1:NLqgqyFzrOkGTVrD3ACX5yYlhlf95RR1xhe4iUdXMls=
+golang.org/x/crypto v0.12.0 h1:tFM/ta59kqch6LlvYnPa0yx5a83cL2nHflFhYKvv9Yk=
+golang.org/x/crypto v0.12.0/go.mod h1:NF0Gs7EO5K4qLn+Ylc+fih8BSTeIjAP05siRnAh98yw=
 golang.org/x/time v0.3.0 h1:rg5rLMjNzMS1RkNLzCG38eapWhnYLFYXDXj2gOlr8j4=
 golang.org/x/time v0.3.0/go.mod h1:tRJNPiyCQ0inRvYxbN9jk5I+vvW/OXSQhTDSoE431IQ=
