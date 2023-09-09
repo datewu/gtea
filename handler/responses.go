@@ -5,6 +5,18 @@ import (
 	"time"
 )
 
+// ClearSimpleCookie clear a named simple cookie
+func ClearSimpleCookie(w http.ResponseWriter, name string) {
+	cookie := http.Cookie{
+		Name:     name,
+		HttpOnly: true,
+		Path:     "/",
+		Value:    "",
+		MaxAge:   -1,
+	}
+	http.SetCookie(w, &cookie)
+}
+
 // SetSimpleCookie set key value within a week
 func SetSimpleCookie(w http.ResponseWriter, r *http.Request, k, v string) {
 	du := 7 * 24 * time.Hour
@@ -14,6 +26,7 @@ func SetSimpleCookie(w http.ResponseWriter, r *http.Request, k, v string) {
 		Path:    "/",
 		Domain:  r.URL.Host,
 		Expires: expire, MaxAge: int(du.Seconds()),
+		HttpOnly: true,
 	}
 	http.SetCookie(w, &cookie)
 }
