@@ -11,6 +11,12 @@ import (
 	"github.com/datewu/gtea/jsonlog"
 )
 
+// DevEnv const
+const (
+	DevEnv  = "development"
+	DevPort = 8080
+)
+
 type contextKey string
 
 // App is the main application object.
@@ -66,8 +72,8 @@ type Config struct {
 // DefaultConfig is the default configuration for the application
 func DefaultConfig() *Config {
 	return &Config{
-		Port:     8080,
-		Env:      "development",
+		Port:     DevPort,
+		Env:      DevEnv,
 		Metrics:  false,
 		LogLevel: jsonlog.LevelInfo,
 	}
@@ -86,4 +92,9 @@ func (a *App) GetMetaData(key string) string {
 		return str
 	}
 	return ""
+}
+
+// Env returns config environment
+func (a *App) Env() string {
+	return a.config.Env
 }
