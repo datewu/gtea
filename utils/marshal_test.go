@@ -26,13 +26,16 @@ func (l *anCache) UnmarshalBinary(data []byte) error {
 func ExampleRedisMarshal() {
 	data := anCache{"hello", "world"}
 	bs, err := data.MarshalBinary()
+	// before go1.21.0
+	// [15 255 129 2 1 1 1 97 1 255 130 0 1 12 0 0 16 255 130 0 2 5 104 101 108 108 111 5 119 111 114 108 100]
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(bs)
 
 	// Output:
-	// [15 255 129 2 1 1 1 97 1 255 130 0 1 12 0 0 16 255 130 0 2 5 104 101 108 108 111 5 119 111 114 108 100]
+	// [14 127 2 1 1 1 97 1 255 128 0 1 12 0 0 16 255 128 0 2 5 104 101 108 108 111 5 119 111 114 108 100]
+
 }
 
 func TestUnMarshal(t *testing.T) {

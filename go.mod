@@ -1,6 +1,6 @@
 module github.com/datewu/gtea
 
-go 1.21.0
+go 1.21.1
 
 require (
 	github.com/datewu/security v0.2.5
