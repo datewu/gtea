@@ -22,6 +22,35 @@ func strPoint(name string, data *string) string {
 	return fmt.Sprintf("%s: %s\n", name, *data)
 }
 
+// RawBytes set marshal the event as a byte slice. Escape '\n' to '\r\n'
+func (e Event) RawBytes() []byte {
+	if e.data == nil {
+		return nil
+	}
+	buf := new(bytes.Buffer)
+	buf.WriteString(strPoint("id", e.id))
+	buf.WriteString(strPoint("event", e.name))
+	buf.WriteString(strPoint("retry", e.retry))
+	buf.WriteString("data: ")
+	js := new(bytes.Buffer)
+	renc := json.NewEncoder(js)
+	renc.SetEscapeHTML(false)
+	err := renc.Encode(e.data)
+	if err != nil {
+		return nil
+	}
+	bs := js.Bytes()
+	for _, b := range bs {
+		if b == '\n' {
+			buf.WriteString("\r\n")
+		} else {
+			buf.WriteByte(b)
+		}
+	}
+	buf.WriteString("\n\n")
+	return buf.Bytes()
+}
+
 // Bytes marshal the event as a byte slice. Escape '\n' to '\r\n'
 func (e Event) Bytes() []byte {
 	if e.data == nil {
@@ -50,6 +79,16 @@ func (e Event) Bytes() []byte {
 // Send syntax sugar
 func (e Event) Send(w io.Writer, f http.Flusher) error {
 	_, err := w.Write(e.Bytes())
+	if err != nil {
+		return err
+	}
+	f.Flush()
+	return nil
+}
+
+// SendRaw syntax sugar
+func (e Event) SendRaw(w io.Writer, f http.Flusher) error {
+	_, err := w.Write(e.RawBytes())
 	if err != nil {
 		return err
 	}

@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// Demo time tick SSE
-func Demo(w http.ResponseWriter, r *http.Request) {
+// DemoHanderFunc time tick SSE
+func DemoHanderFunc(w http.ResponseWriter, r *http.Request) {
 	tick := tickStream{}
-	Handle(w, r, tick)
+	SSE(w, r, tick)
 }
 
 // Streamer write endless events to ResponseWriter.
@@ -18,7 +18,7 @@ type Streamer interface {
 
 type tickStream struct{}
 
-// Pour ...
+// Pour to http.ResponseWriter with a http.Flusher
 func (t tickStream) Pour(w http.ResponseWriter, f http.Flusher) {
 	timer := time.NewTicker(time.Second)
 	defer timer.Stop()

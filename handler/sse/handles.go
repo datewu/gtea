@@ -4,8 +4,8 @@ import (
 	"net/http"
 )
 
-// Handle downstream
-func Handle(w http.ResponseWriter, r *http.Request, h Streamer) {
+// SSE proxy to Streamer
+func SSE(w http.ResponseWriter, r *http.Request, h Streamer) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -25,7 +25,7 @@ func Handle(w http.ResponseWriter, r *http.Request, h Streamer) {
 // NewHandler returns a HandlerFunc that writes/loop the event to the ResponseWriter.
 func NewHandler(h Streamer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		Handle(w, r, h)
+		SSE(w, r, h)
 	}
 }
 
