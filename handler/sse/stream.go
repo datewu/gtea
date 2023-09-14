@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"context"
 	"net/http"
 	"time"
 )
@@ -13,13 +14,13 @@ func DemoHanderFunc(w http.ResponseWriter, r *http.Request) {
 
 // Streamer write endless events to ResponseWriter.
 type Streamer interface {
-	Pour(http.ResponseWriter, http.Flusher)
+	Send(context.Context, http.ResponseWriter, http.Flusher)
 }
 
 type tickStream struct{}
 
 // Pour to http.ResponseWriter with a http.Flusher
-func (t tickStream) Pour(w http.ResponseWriter, f http.Flusher) {
+func (t tickStream) Send(ctx context.Context, w http.ResponseWriter, f http.Flusher) {
 	timer := time.NewTicker(time.Second)
 	defer timer.Stop()
 	for i := 0; i < 3; i++ {

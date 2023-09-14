@@ -19,7 +19,7 @@ func SSE(w http.ResponseWriter, r *http.Request, h Streamer) {
 		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
 		return
 	}
-	h.Pour(w, f)
+	h.Send(r.Context(), w, f)
 }
 
 // NewHandler returns a HandlerFunc that writes/loop the event to the ResponseWriter.
